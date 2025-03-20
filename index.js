@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 
 app.use("/:category", (req, res, next) => {
-    const targetUrl = req.query.url; // Extract the URL from the query parameter
+    const targetUrl = req.query.url;
 
     if (!targetUrl) {
         return res.status(400).json({ error: "Missing 'url' query parameter" });
@@ -16,14 +16,12 @@ app.use("/:category", (req, res, next) => {
         target: targetUrl,
         changeOrigin: true,
         onProxyReq: (proxyReq) => {
-            proxyReq.setHeader("Origin", ""); // Remove origin header if needed
-        },
+            proxyReq.setHeader("Origin", "");
+        }
     });
 
     return proxy(req, res, next);
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`CORS Proxy running on port ${PORT}`);
-});
+app.listen(PORT);
