@@ -11,30 +11,38 @@ export default async function handler(req, res) {
     try {
         url = decodeURIComponent(url);
 
-        const agent = new https.Agent({ rejectUnauthorized: false }); // Ignore SSL issues
+        const agent = new https.Agent({ rejectUnauthorized: false }); // Ignore SSL certificate errors
 
         const response = await axios.get(url, {
             headers: {
                 'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
                 'Referer': url,
             },
-            httpsAgent: agent, // Use custom HTTPS agent to ignore SSL verification
+            httpsAgent: agent, // Bypass SSL issues
             responseType: 'stream',
-            maxRedirects: 0, // Prevent following redirects
-            validateStatus: (status) => status < 400 || status === 301 || status === 302, // Allow 301/302
+            maxRedirects: 0, // Don't follow redirects
+            validateStatus: (status) => status < 400 || status === 301 || status === 302, // Allow 301/302 responses
         });
 
+        // If YouTube tries to redirect, rewrite the URL to stay in the proxy
         if (response.status === 301 || response.status === 302) {
-            const redirectUrl = response.headers.location;
-            return res.status(response.status).json({ redirect: redirectUrl });
+            let redirectUrl = response.headers.location;
+
+            if (redirectUrl.startsWith('/')) {
+                redirectUrl = new URL(redirectUrl, url).href;
+            }
+
+            return res.writeHead(302, { Location: `/api/index.js?url=${encodeURIComponent(redirectUrl)}` }).end();
         }
 
+        // Set correct content type
         const contentType = response.headers['content-type'];
         if (contentType) res.setHeader("Content-Type", contentType);
 
+        // Stream the proxied response to the client
         response.data.pipe(res);
     } catch (error) {
         console.error(`Error fetching the URL: ${error.message}`);
-        return res.status(500).json({ error: `Error fetching the requested URL: ${error.message}` });
+        return res.status(500).send(`<h1>Proxy Error</h1><p>${error.message}</p>`);
     }
 }
