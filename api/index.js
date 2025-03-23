@@ -9,15 +9,12 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Decode and clean up the URL
+        // Decode the URL only once
         url = decodeURIComponent(url);
-        if (url.includes('%')) {
-            url = decodeURIComponent(url); // Decode twice if needed
-        }
-        
+
         // Force YouTube links into a clean format
         url = url.replace(/https%3A%2F%2Fwww\.youtube\.com/g, 'https://www.youtube.com');
-
+        
         const agent = new https.Agent({ rejectUnauthorized: false });
 
         const response = await axios.get(url, {
@@ -39,8 +36,11 @@ export default async function handler(req, res) {
                 redirectUrl = new URL(redirectUrl, url).href;
             }
 
+            // Ensure no encoding happens with the redirect URL
+            redirectUrl = decodeURIComponent(redirectUrl);
+
             // Rewrite Redirects to Stay Within the Proxy
-            return res.redirect(`/api/index.js?url=${encodeURIComponent(redirectUrl)}`);
+            return res.redirect(`/api/index.js?url=${redirectUrl}`);
         }
 
         // Modify the Response to Keep YouTube Inside the Proxy
