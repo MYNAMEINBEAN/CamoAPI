@@ -26,8 +26,13 @@ export default async function handler(req, res) {
             return res.send(body);
         }
 
-        res.setHeader("Content-Type", contentType);
-        response.body.pipe(res);
+        if (contentType && contentType.includes("image/")) {
+            res.setHeader("Content-Type", contentType);
+            response.body.pipe(res);
+        } else {
+            res.setHeader("Content-Type", contentType || "application/octet-stream");
+            response.body.pipe(res);
+        }
 
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch the requested URL." });
