@@ -9,14 +9,19 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Decode the URL only once
+        // Decode the URL only once to get the normal format
         url = decodeURIComponent(url);
-
-        // Force YouTube links into a clean format
-        url = url.replace(/https%3A%2F%2Fwww\.youtube\.com/g, 'https://www.youtube.com');
         
+        // Ensure no encoded URL in the proxy, remove any encoding
+        url = url.replace(/%3A/g, ':').replace(/%2F/g, '/'); // Decode ':', '/' if needed
+        console.log(`Decoded and clean URL: ${url}`);
+
+        // Force YouTube links into a clean format (no encoded characters)
+        url = url.replace(/https:\/\/www\.youtube\.com/g, 'https://www.youtube.com');
+
         const agent = new https.Agent({ rejectUnauthorized: false });
 
+        // Make the request
         const response = await axios.get(url, {
             headers: {
                 'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
@@ -31,22 +36,22 @@ export default async function handler(req, res) {
         // Handle Redirects (Prevent External Redirections)
         if (response.status === 301 || response.status === 302) {
             let redirectUrl = response.headers.location;
-
+            
             if (redirectUrl.startsWith('/')) {
                 redirectUrl = new URL(redirectUrl, url).href;
             }
 
-            // Ensure no encoding happens with the redirect URL
+            // Clean up redirect URL
             redirectUrl = decodeURIComponent(redirectUrl);
 
             // Rewrite Redirects to Stay Within the Proxy
             return res.redirect(`/api/index.js?url=${encodeURIComponent(redirectUrl)}`);
         }
 
-        // Modify the Response to Keep YouTube Inside the Proxy
+        // Process and modify the response body for YouTube (or other pages)
         let body = response.data.toString('utf-8');
 
-        // Replace all absolute YouTube links with proxied versions
+        // Replace all YouTube URLs with proxied versions
         body = body.replace(/https:\/\/www\.youtube\.com\//g, 'https://your-proxy.com/api/index.js?url=https://www.youtube.com/');
         body = body.replace(/https:\/\/youtube\.com\//g, 'https://your-proxy.com/api/index.js?url=https://youtube.com/');
 
