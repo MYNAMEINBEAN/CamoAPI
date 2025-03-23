@@ -6,17 +6,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Forward CORS headers so the client can access the response
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, User-Agent, Referer');
-        
-        // Handle OPTIONS preflight requests (CORS check)
-        if (req.method === 'OPTIONS') {
-            return res.status(200).end();
-        }
-
         // Make the request to the external URL
+        console.log('Fetching URL:', url);
+
         const response = await fetch(url, {
             headers: {
                 'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
@@ -24,12 +16,12 @@ export default async function handler(req, res) {
             },
         });
 
-        // Check if the response is valid
         if (!response.ok) {
-            return res.status(response.status).json({ error: `Failed to fetch URL: ${response.statusText}` });
+            // Log the failure to help debug
+            console.error(`Failed to fetch: ${response.status} ${response.statusText}`);
+            return res.status(response.status).json({ error: `Failed to fetch the requested URL: ${response.statusText}` });
         }
 
-        // Forward the content type
         const contentType = response.headers.get('content-type');
         if (contentType) {
             res.setHeader('Content-Type', contentType);
@@ -38,7 +30,8 @@ export default async function handler(req, res) {
         // Pipe the response body to the client
         response.body.pipe(res);
     } catch (error) {
-        console.error('Error:', error);
+        // Log the detailed error for debugging
+        console.error('Error in function execution:', error);
         res.status(500).json({ error: 'Failed to fetch the requested URL.' });
     }
 }
