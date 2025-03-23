@@ -5,26 +5,26 @@ export default async function handler(req, res) {
     let { url } = req.query;
 
     if (!url) {
-        return res.status(400).json({ error: "No URL provided." });
+        return res.status(400).send("No URL provided.");
     }
 
     try {
         url = decodeURIComponent(url);
 
-        const agent = new https.Agent({ rejectUnauthorized: false }); // Ignore SSL certificate errors
+        const agent = new https.Agent({ rejectUnauthorized: false });
 
         const response = await axios.get(url, {
             headers: {
                 'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
                 'Referer': url,
             },
-            httpsAgent: agent, // Bypass SSL issues
-            responseType: 'stream',
+            httpsAgent: agent,
+            responseType: 'arraybuffer', // Capture response as raw buffer (needed for rewriting)
             maxRedirects: 0, // Don't follow redirects
-            validateStatus: (status) => status < 400 || status === 301 || status === 302, // Allow 301/302 responses
+            validateStatus: (status) => status < 400 || status === 301 || status === 302,
         });
 
-        // If YouTube tries to redirect, rewrite the URL to stay in the proxy
+        // Handle YouTube redirects by rewriting the URL
         if (response.status === 301 || response.status === 302) {
             let redirectUrl = response.headers.location;
 
@@ -32,15 +32,23 @@ export default async function handler(req, res) {
                 redirectUrl = new URL(redirectUrl, url).href;
             }
 
-            return res.writeHead(302, { Location: `/api/index.js?url=${encodeURIComponent(redirectUrl)}` }).end();
+            return res.redirect(`/api/index.js?url=${encodeURIComponent(redirectUrl)}`);
         }
 
-        // Set correct content type
-        const contentType = response.headers['content-type'];
-        if (contentType) res.setHeader("Content-Type", contentType);
+        // Rewrite URLs in the response body to stay within the proxy
+        let body = response.data.toString('utf-8');
 
-        // Stream the proxied response to the client
-        response.data.pipe(res);
+        // Replace all absolute YouTube links with proxied links
+        body = body.replace(/https:\/\/www\.youtube\.com\//g, 'https://camo-api-zu2i.vercel.app/api/index.js?url=https://www.youtube.com/');
+        body = body.replace(/https:\/\/youtube\.com\//g, 'https://camo-api-zu2i.vercel.app/api/index.js?url=https://youtube.com/');
+
+        // Fix relative paths (e.g., "/watch?v=xyz" → proxied link)
+        body = body.replace(/href="\/(watch\?v=[^"]+)"/g, 'href="/api/index.js?url=https://www.youtube.com/$1"');
+
+        // Set proper content type
+        res.setHeader("Content-Type", response.headers["content-type"] || "text/html");
+
+        res.send(body);
     } catch (error) {
         console.error(`Error fetching the URL: ${error.message}`);
         return res.status(500).send(`<h1>Proxy Error</h1><p>${error.message}</p>`);
