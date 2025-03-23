@@ -6,8 +6,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Make the request to the external URL
-        console.log('Fetching URL:', url);
+        console.log(`Attempting to fetch: ${url}`);
 
         const response = await fetch(url, {
             headers: {
@@ -17,8 +16,8 @@ export default async function handler(req, res) {
         });
 
         if (!response.ok) {
-            // Log the failure to help debug
-            console.error(`Failed to fetch: ${response.status} ${response.statusText}`);
+            // Log detailed error info if response is not OK
+            console.error(`Error fetching URL: ${response.status} ${response.statusText}`);
             return res.status(response.status).json({ error: `Failed to fetch the requested URL: ${response.statusText}` });
         }
 
@@ -30,8 +29,7 @@ export default async function handler(req, res) {
         // Pipe the response body to the client
         response.body.pipe(res);
     } catch (error) {
-        // Log the detailed error for debugging
-        console.error('Error in function execution:', error);
+        console.error('Error occurred during fetch:', error);
         res.status(500).json({ error: 'Failed to fetch the requested URL.' });
     }
 }
