@@ -1,20 +1,8 @@
 {
   "name": "camoapi",
   "version": "1.0.0",
-  "description": "A custom CORS proxy using Express and deployed on Vercel.",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "dev": "vercel dev",
-    "install": "rm -rf node_modules package-lock.json && npm cache clean --force && npm install"
-  },
+  "main": "api/index.js",
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "http-proxy-middleware": "^2.0.6"
-  },
-  "engines": {
-    "node": "18.x"
-  },
-  "license": "MIT"
+    "node-fetch": "^3.3.1"
+  }
 }
