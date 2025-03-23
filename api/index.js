@@ -17,6 +17,14 @@ export default async function handler(req, res) {
 
         if (contentType && contentType.includes("text/html")) {
             let body = await response.text();
+
+            // Handle relative URLs (like CSS, JS, images) by converting to absolute URLs
+            const baseUrl = new URL(url);
+            body = body.replace(/(href|src)="(\/[^"]+)"/g, (match, p1, p2) => {
+                // Convert relative URLs to absolute URLs
+                return `${p1}="${baseUrl.origin}${p2}"`;
+            });
+
             const erudaScript = `
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/eruda/2.4.1/eruda.min.js"></script>
                 <script>eruda.init();</script>
