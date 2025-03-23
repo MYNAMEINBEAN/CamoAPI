@@ -22,11 +22,20 @@ export default async function handler(req, res) {
                 <script>eruda.init();</script>
             `;
             body = body.replace("</body>", `${erudaScript}</body>`);
-            
-            // Rewrite absolute URLs to use the proxy path
+
             body = body.replace(/(href|src)="(https?:\/\/[^"]+)"/g, (match, attr, resourceUrl) => {
                 const proxiedUrl = `/api/index.js?url=${encodeURIComponent(resourceUrl)}`;
                 return `${attr}="${proxiedUrl}"`;
+            });
+
+            body = body.replace(/<link[^>]+href="(https?:\/\/[^"]+\.css)"/g, (match, cssUrl) => {
+                const proxiedUrl = `/api/index.js?url=${encodeURIComponent(cssUrl)}`;
+                return match.replace(cssUrl, proxiedUrl);
+            });
+
+            body = body.replace(/<script[^>]+src="(https?:\/\/[^"]+\.js)"/g, (match, jsUrl) => {
+                const proxiedUrl = `/api/index.js?url=${encodeURIComponent(jsUrl)}`;
+                return match.replace(jsUrl, proxiedUrl);
             });
 
             res.setHeader("Content-Type", "text/html");
@@ -36,7 +45,14 @@ export default async function handler(req, res) {
         if (contentType && contentType.includes("image/")) {
             res.setHeader("Content-Type", contentType);
             response.body.pipe(res);
-        } else {
+        }
+        
+        else if (contentType && contentType.includes("application/")) {
+            res.setHeader("Content-Type", contentType);
+            response.body.pipe(res);
+        }
+
+        else {
             res.setHeader("Content-Type", contentType || "application/octet-stream");
             response.body.pipe(res);
         }
