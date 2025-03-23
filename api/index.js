@@ -16,7 +16,8 @@ export default async function handler(req, res) {
                     'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
                     'Referer': url,
                 },
-                responseType: 'stream', // This is to allow streaming the response
+                responseType: 'stream', // This allows streaming the response
+                maxRedirects: 0, // Disable redirects
             });
 
             // Check if the request was successful
@@ -44,6 +45,7 @@ export default async function handler(req, res) {
                     'Referer': url,
                 },
                 responseType: 'stream', // This allows streaming the content of other URLs
+                maxRedirects: 0, // Disable redirects
             });
 
             // Check if the request was successful
