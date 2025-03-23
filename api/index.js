@@ -1,4 +1,5 @@
 import axios from 'axios';
+import https from 'https';
 
 export default async function handler(req, res) {
     let { url } = req.query;
@@ -10,18 +11,23 @@ export default async function handler(req, res) {
     try {
         url = decodeURIComponent(url);
 
-        // If it's a YouTube URL, force "nocookie" mode
-        url = url.replace("youtube.com", "youtube-nocookie.com");
+        const agent = new https.Agent({ rejectUnauthorized: false }); // Ignore SSL issues
 
         const response = await axios.get(url, {
             headers: {
                 'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
                 'Referer': url,
             },
+            httpsAgent: agent, // Use custom HTTPS agent to ignore SSL verification
             responseType: 'stream',
-            maxRedirects: 20,
-            validateStatus: (status) => status < 500,
+            maxRedirects: 0, // Prevent following redirects
+            validateStatus: (status) => status < 400 || status === 301 || status === 302, // Allow 301/302
         });
+
+        if (response.status === 301 || response.status === 302) {
+            const redirectUrl = response.headers.location;
+            return res.status(response.status).json({ redirect: redirectUrl });
+        }
 
         const contentType = response.headers['content-type'];
         if (contentType) res.setHeader("Content-Type", contentType);
