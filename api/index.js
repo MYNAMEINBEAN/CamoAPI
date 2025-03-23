@@ -17,7 +17,8 @@ export default async function handler(req, res) {
                     'Referer': url,
                 },
                 responseType: 'stream', // This allows streaming the response
-                maxRedirects: 5, // Allow up to 5 redirects
+                maxRedirects: 20, // Allow multiple redirects
+                validateStatus: (status) => status < 500, // Accept all status codes below 500
             });
 
             // If the request is successful, stream the content
@@ -29,13 +30,6 @@ export default async function handler(req, res) {
                 return res.status(500).json({ error: `Failed to fetch the requested YouTube page: ${response.statusText}` });
             }
         } catch (error) {
-            if (error.response && error.response.status === 301) {
-                // Handle 301 redirect manually if needed
-                const redirectUrl = error.response.headers['location'];
-                console.log(`Redirected to: ${redirectUrl}`);
-                return res.redirect(redirectUrl); // Follow the redirect
-            }
-
             console.error(`Error fetching YouTube page: ${error.message}`);
             return res.status(500).json({ error: `Error fetching the requested YouTube page: ${error.message}` });
         }
@@ -48,7 +42,8 @@ export default async function handler(req, res) {
                     'Referer': url,
                 },
                 responseType: 'stream', // This allows streaming the content of other URLs
-                maxRedirects: 5, // Allow up to 5 redirects
+                maxRedirects: 20, // Allow multiple redirects
+                validateStatus: (status) => status < 500, // Accept all status codes below 500
             });
 
             // If the request is successful, stream the content
