@@ -38,6 +38,11 @@ export default async function handler(req, res) {
                 return match.replace(jsUrl, proxiedUrl);
             });
 
+            body = body.replace(/<iframe[^>]+src="(https?:\/\/www.youtube.com[^"]+)"/g, (match, iframeUrl) => {
+                const proxiedUrl = `/api/index.js?url=${encodeURIComponent(iframeUrl)}`;
+                return match.replace(iframeUrl, proxiedUrl);
+            });
+
             res.setHeader("Content-Type", "text/html");
             return res.send(body);
         }
@@ -46,7 +51,7 @@ export default async function handler(req, res) {
             res.setHeader("Content-Type", contentType);
             response.body.pipe(res);
         }
-        
+
         else if (contentType && contentType.includes("application/")) {
             res.setHeader("Content-Type", contentType);
             response.body.pipe(res);
