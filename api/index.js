@@ -9,7 +9,18 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Decode URL properly
         url = decodeURIComponent(url);
+
+        // Ensure the URL is always in the correct format (fix double encoding)
+        if (url.includes('%')) {
+            url = decodeURIComponent(url); // Decode twice if needed
+        }
+
+        // Ensure YouTube URLs are never double encoded
+        if (url.startsWith('https%3A%2F%2Fwww.youtube.com')) {
+            url = url.replace('https%3A%2F%2Fwww.youtube.com', 'https://www.youtube.com');
+        }
 
         const agent = new https.Agent({ rejectUnauthorized: false });
 
