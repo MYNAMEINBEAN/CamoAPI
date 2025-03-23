@@ -17,15 +17,14 @@ export default async function handler(req, res) {
                     'Referer': url,
                 },
                 responseType: 'stream', // This allows streaming the response
-                maxRedirects: 20, // Allow multiple redirects
-                validateStatus: (status) => status < 500, // Accept all status codes below 500
+                maxRedirects: 0, // Disallow redirects to prevent going back to the proxy URL
             });
 
             // If the request is successful, stream the content
             if (response.status === 200) {
                 const contentType = response.headers['content-type'];
                 if (contentType) res.setHeader("Content-Type", contentType);
-                response.data.pipe(res);
+                response.data.pipe(res); // Pipe the response data to the client
             } else {
                 return res.status(500).json({ error: `Failed to fetch the requested YouTube page: ${response.statusText}` });
             }
@@ -42,8 +41,7 @@ export default async function handler(req, res) {
                     'Referer': url,
                 },
                 responseType: 'stream', // This allows streaming the content of other URLs
-                maxRedirects: 20, // Allow multiple redirects
-                validateStatus: (status) => status < 500, // Accept all status codes below 500
+                maxRedirects: 0, // Disallow redirects to avoid any proxy redirection loops
             });
 
             // If the request is successful, stream the content
