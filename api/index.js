@@ -6,6 +6,7 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Fetch the HTML content from the given URL
         const response = await fetch(url, {
             headers: {
                 'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
@@ -15,14 +16,18 @@ export default async function handler(req, res) {
 
         const contentType = response.headers.get("content-type");
 
+        // If the content is HTML, we need to modify it
         if (contentType && contentType.includes("text/html")) {
             let body = await response.text();
+
+            // Inject the eruda.js script for debugging
             const erudaScript = `
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/eruda/2.4.1/eruda.min.js"></script>
                 <script>eruda.init();</script>
             `;
             body = body.replace("</body>", `${erudaScript}</body>`);
 
+            // Modify URLs in the HTML content to point to your proxy
             body = body.replace(/(href|src)="(https?:\/\/[^"]+)"/g, (match, attr, resourceUrl) => {
                 const proxiedUrl = `/api/index.js?url=${encodeURIComponent(resourceUrl)}`;
                 return `${attr}="${proxiedUrl}"`;
@@ -47,22 +52,17 @@ export default async function handler(req, res) {
             return res.send(body);
         }
 
+        // For non-HTML content, we fetch it directly and return it
         if (contentType && contentType.includes("image/")) {
             res.setHeader("Content-Type", contentType);
             response.body.pipe(res);
-        }
-
-        else if (contentType && contentType.includes("application/")) {
+        } else if (contentType && contentType.includes("application/")) {
             res.setHeader("Content-Type", contentType);
             response.body.pipe(res);
-        }
-
-        else if (contentType && contentType.includes("font/")) {
+        } else if (contentType && contentType.includes("font/")) {
             res.setHeader("Content-Type", contentType);
             response.body.pipe(res);
-        }
-
-        else {
+        } else {
             res.setHeader("Content-Type", contentType || "application/octet-stream");
             response.body.pipe(res);
         }
