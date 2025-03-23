@@ -22,6 +22,13 @@ export default async function handler(req, res) {
                 <script>eruda.init();</script>
             `;
             body = body.replace("</body>", `${erudaScript}</body>`);
+            
+            // Rewrite absolute URLs to use the proxy path
+            body = body.replace(/(href|src)="(https?:\/\/[^"]+)"/g, (match, attr, resourceUrl) => {
+                const proxiedUrl = `/api/index.js?url=${encodeURIComponent(resourceUrl)}`;
+                return `${attr}="${proxiedUrl}"`;
+            });
+
             res.setHeader("Content-Type", "text/html");
             return res.send(body);
         }
