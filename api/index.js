@@ -23,7 +23,7 @@ export default async function handler(req, res) {
                 'Referer': url,
             },
             httpsAgent: agent,
-            responseType: 'arraybuffer',
+            responseType: 'arraybuffer', // Important for binary content (JS, images, videos)
             maxRedirects: 0, // STOP FOLLOWING REDIRECTS
             validateStatus: (status) => status < 400 || status === 301 || status === 302,
         });
@@ -52,9 +52,6 @@ export default async function handler(req, res) {
 
         // Fix relative paths ("/watch?v=xyz" → Keep it inside the proxy)
         body = body.replace(/href="\/(watch\?v=[^"]+)"/g, 'href="/api/index.js?url=https://www.youtube.com/$1"');
-
-        // Make sure YouTube's inline JS and other resources are proxied too
-        body = body.replace(/src="\/([^"]+)"/g, 'src="https://your-proxy.com/api/index.js?url=https://www.youtube.com/$1"');
 
         res.setHeader("Content-Type", response.headers["content-type"] || "text/html");
         res.send(body);
