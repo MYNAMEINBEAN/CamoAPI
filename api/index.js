@@ -57,6 +57,11 @@ export default async function handler(req, res) {
             response.body.pipe(res);
         }
 
+        else if (contentType && contentType.includes("font/")) {
+            res.setHeader("Content-Type", contentType);
+            response.body.pipe(res);
+        }
+
         else {
             res.setHeader("Content-Type", contentType || "application/octet-stream");
             response.body.pipe(res);
