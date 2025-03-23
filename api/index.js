@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 export default async function handler(req, res) {
     const { url } = req.query;
 
@@ -8,28 +10,27 @@ export default async function handler(req, res) {
     try {
         console.log(`Attempting to fetch: ${url}`);
 
-        const response = await fetch(url, {
+        const response = await axios.get(url, {
             headers: {
                 'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
                 'Referer': req.headers['referer'] || url,
             },
         });
 
-        if (!response.ok) {
-            // Log detailed error info if response is not OK
-            console.error(`Error fetching URL: ${response.status} ${response.statusText}`);
-            return res.status(response.status).json({ error: `Failed to fetch the requested URL: ${response.statusText}` });
-        }
+        // Forward CORS headers for the client-side
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, User-Agent, Referer');
 
-        const contentType = response.headers.get('content-type');
+        // Set content type header
+        const contentType = response.headers['content-type'];
         if (contentType) {
             res.setHeader('Content-Type', contentType);
         }
 
-        // Pipe the response body to the client
-        response.body.pipe(res);
+        res.status(200).send(response.data);
     } catch (error) {
-        console.error('Error occurred during fetch:', error);
+        console.error('Axios error occurred during fetch:', error);
         res.status(500).json({ error: 'Failed to fetch the requested URL.' });
     }
 }
