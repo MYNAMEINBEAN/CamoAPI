@@ -1,3 +1,6 @@
+import axios from 'axios';
+import https from 'https'; // ✅ Fix: Ensure HTTPS is imported
+
 export default async function handler(req, res) {
     let { url } = req.query;
 
@@ -8,7 +11,6 @@ export default async function handler(req, res) {
     try {
         url = decodeURIComponent(url);
         url = url.replace(/%3A/g, ':').replace(/%2F/g, '/');
-
         console.log(`Proxying: ${url}`);
 
         const agent = new https.Agent({ rejectUnauthorized: false });
@@ -19,13 +21,11 @@ export default async function handler(req, res) {
                 'Referer': url,
             },
             httpsAgent: agent,
-            responseType: 'arraybuffer', // Binary response support
+            responseType: 'arraybuffer',
         });
 
-        // Set correct content type
         const contentType = response.headers["content-type"] || "application/octet-stream";
         res.setHeader("Content-Type", contentType);
-
         res.send(response.data);
 
     } catch (error) {
