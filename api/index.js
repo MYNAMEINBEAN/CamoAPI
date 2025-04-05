@@ -23,10 +23,12 @@ export default async function handler(req, res) {
             },
             httpsAgent: agent,
             responseType: 'arraybuffer',
+            timeout: 10000, // Timeout after 10 seconds
         });
 
         const contentType = response.headers["content-type"] || "application/octet-stream";
         res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, User-Agent, Referer");
 
         if (contentType.includes("text/html")) {
             let htmlContent = Buffer.from(response.data).toString('utf-8');
