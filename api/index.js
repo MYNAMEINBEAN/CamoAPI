@@ -10,14 +10,17 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Decode and clean the URL
         url = decodeURIComponent(url);
         console.log(`Proxying: ${url}`);
 
+        // Extract base URL (protocol + host)
         const parsedBaseUrl = urlModule.parse(url);
         const baseUrl = `${parsedBaseUrl.protocol}//${parsedBaseUrl.host}`;
 
         const excludedPaths = ['/login/ldap', '/login', '/oauth', '/api/auth'];
 
+        // Check if the URL should be excluded (e.g., login pages)
         const shouldExcludeUrl = (url) => {
             return excludedPaths.some(excludedPath => url.includes(excludedPath));
         };
@@ -26,6 +29,7 @@ export default async function handler(req, res) {
         const isJsonRequest = /\.json$/i.test(url);
         const isScriptRequest = /\.(js)$/i.test(url);
         
+        // Handle image requests
         if (isImageRequest) {
             const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -41,7 +45,9 @@ export default async function handler(req, res) {
 
             res.status(response.status).send(Buffer.from(response.data));
 
-        } else if (isJsonRequest) {
+        } 
+        // Handle JSON requests
+        else if (isJsonRequest) {
             const agent = new https.Agent({ rejectUnauthorized: false });
 
             const response = await axios.get(url, {
@@ -57,7 +63,9 @@ export default async function handler(req, res) {
 
             res.status(response.status).json(response.data);
 
-        } else {
+        } 
+        // Handle other requests (HTML, CSS, JS)
+        else {
             const agent = new https.Agent({ rejectUnauthorized: false });
 
             const response = await axios.get(url, {
@@ -78,13 +86,14 @@ export default async function handler(req, res) {
             } else if (contentType.includes("text/html")) {
                 let htmlContent = response.data;
 
+                // Function to proxify URLs
                 const proxifyUrl = (url) => {
                     if (shouldExcludeUrl(url)) {
                         return url;
                     }
 
                     if (url.startsWith('/') || !url.startsWith('http')) {
-                        return `/api/index.js?url=${encodeURIComponent(baseUrl + (url.startsWith('/') ? url : '/' + url))}`;
+                        return `/API/index.js?url=${encodeURIComponent(baseUrl + (url.startsWith('/') ? url : '/' + url))}`;
                     }
 
                     if (url.includes('.onlinestyles')) {
@@ -92,44 +101,25 @@ export default async function handler(req, res) {
                     }
 
                     if (url.startsWith(baseUrl)) {
-                        return `/api/index.js?url=${encodeURIComponent(url)}`;
+                        return `/API/index.js?url=${encodeURIComponent(url)}`;
                     }
 
-                    return `/api/index.js?url=${encodeURIComponent(url)}`;
+                    return `/API/index.js?url=${encodeURIComponent(url)}`;
                 };
 
+                // Replace link and script src with proxified URL
                 htmlContent = htmlContent.replace(/(<(?:link|script)[^>]+(?:href|src)\s*=\s*['"])([^'"]+)(['"][^>]*>)/gi, (match, p1, p2, p3) => {
                     const proxifiedUrl = proxifyUrl(p2);
                     return `${p1}${proxifiedUrl}${p3}`;
                 });
 
+                // Handle <img> src attribute
                 htmlContent = htmlContent.replace(/(<img[^>]+src\s*=\s*['"])([^'"]+)(['"][^>]*>)/gi, (match, p1, p2, p3) => {
                     const proxifiedUrl = proxifyUrl(p2);
                     return `${p1}${proxifiedUrl}${p3}`;
                 });
 
-                const proxifyJsRedirection = (jsCode) => {
-                    return jsCode.replace(/(window\.(location|open|replace|assign)\s*=\s*['"])([^'"]+)(['"])/gi, (match, p1, p2, p3, p4) => {
-                        if (shouldExcludeUrl(p3)) {
-                            return match;
-                        }
-
-                        const proxifiedUrl = proxifyUrl(p3);
-                        return `${p1}${p2}${proxifiedUrl}${p4}`;
-                    }).replace(/(onclick\s*=\s*['"])([^'"]+)(['"])/gi, (match, p1, p2, p3) => {
-                        const proxifiedUrl = proxifyUrl(p2);
-                        return `${p1}${proxifiedUrl}${p3}`;
-                    }).replace(/(href\s*=\s*['"])([^'"]+)(['"])/gi, (match, p1, p2, p3) => {
-                        const proxifiedUrl = proxifyUrl(p2);
-                        return `${p1}${proxifiedUrl}${p3}`;
-                    });
-                };
-
-                htmlContent = htmlContent.replace(/(<script[^>]*>)([\s\S]*?)(<\/script>)/gi, (match, p1, p2, p3) => {
-                    const proxifiedJs = proxifyJsRedirection(p2);
-                    return `${p1}${proxifiedJs}${p3}`;
-                });
-
+                // Add Eruda for inspecting the page
                 htmlContent = htmlContent.replace('</body>', `<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script></body>`);
 
                 res.setHeader("Content-Type", "text/html");
