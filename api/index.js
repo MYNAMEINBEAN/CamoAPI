@@ -78,7 +78,7 @@ export default async function handler(req, res) {
 
                     // If it's a relative URL, resolve it to the base URL
                     if (url.startsWith('/') || !url.startsWith('http')) {
-                        return `/API/index.js?url=${encodeURIComponent(baseUrl + url)}`;
+                        return `/api/index.js?url=${encodeURIComponent(baseUrl + url)}`;  // Make sure "api" is lowercase
                     }
 
                     // Fix URLs where there is no slash between parts of the domain and path (e.g., 'onlinestyles.css' instead of 'online/styles.css')
@@ -86,8 +86,13 @@ export default async function handler(req, res) {
                         url = url.replace('.onlinestyles', '/onlinestyles');  // Add the slash
                     }
 
+                    // Ensure that the proxified URL properly handles paths with missing slashes
+                    if (url.startsWith(baseUrl)) {
+                        return `/api/index.js?url=${encodeURIComponent(url)}`;  // Make sure "api" is lowercase
+                    }
+
                     // Otherwise, return a proxified absolute URL
-                    return `/API/index.js?url=${encodeURIComponent(url)}`;
+                    return `/api/index.js?url=${encodeURIComponent(url)}`;  // Make sure "api" is lowercase
                 };
 
                 // Modify <link>, <script>, and <img> tags to proxify URLs
