@@ -29,6 +29,7 @@ export default async function handler(req, res) {
         res.setHeader("Content-Type", contentType);
         res.setHeader("Access-Control-Allow-Origin", "*"); // Optional for CORS
 
+        // Ensure the data is returned correctly
         res.status(response.status).send(Buffer.from(response.data)); // ✅ Sends raw binary data
 
     } catch (error) {
