@@ -1,6 +1,6 @@
 import axios from 'axios';
 import https from 'https';
-import urlModule from 'url';  // Node's URL module to help with URL resolution
+import urlModule from 'url';
 
 export default async function handler(req, res) {
     let { url } = req.query;
@@ -18,10 +18,18 @@ export default async function handler(req, res) {
         const parsedBaseUrl = urlModule.parse(url);
         const baseUrl = `${parsedBaseUrl.protocol}//${parsedBaseUrl.host}`;
 
-        // Check if the request is for an image (added more image types)
+        // Exclude URLs that we don't want to proxify (e.g., login or third-party redirects)
+        const excludedPaths = ['/login/ldap', '/login', '/oauth', '/api/auth'];
+
+        // Function to check if a URL should be excluded
+        const shouldExcludeUrl = (url) => {
+            return excludedPaths.some(excludedPath => url.includes(excludedPath));
+        };
+
+        // Check if the request is for an image
         const isImageRequest = /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|ico|webm|avif)$/i.test(url);
 
-        // Use the appropriate handler for images or other assets
+        // If it is an image, proxy the image directly
         if (isImageRequest) {
             const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -39,12 +47,13 @@ export default async function handler(req, res) {
             res.status(response.status).send(Buffer.from(response.data));
 
         } else {
+            // For non-image assets (HTML, CSS, JS, JSON), handle them as text
             const agent = new https.Agent({ rejectUnauthorized: false });
 
             const response = await axios.get(url, {
                 httpsAgent: agent,
-                responseType: 'text', // Use text for assets like CSS and JS
-                timeout: 30000, // Timeout for slow responses
+                responseType: 'text',
+                timeout: 30000,
             });
 
             const contentType = response.headers["content-type"] || "application/octet-stream";
@@ -53,32 +62,26 @@ export default async function handler(req, res) {
             res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             res.setHeader("Access-Control-Allow-Headers", "Content-Type, User-Agent, Referer");
 
-            // Handle text-based responses (CSS, JS, JSON, HTML)
+            // Handle JSON responses
             if (contentType.includes("application/json")) {
                 res.setHeader("Content-Type", "application/json");
-                res.status(response.status).json(response.data); // Return JSON data
+                res.status(response.status).json(response.data);
             } else if (contentType.includes("text/html")) {
-                // If HTML content, modify the links and redirections to be proxified
+                // If the content is HTML, we need to proxify the links and scripts
                 let htmlContent = response.data;
 
                 // Helper function to proxify URLs
                 const proxifyUrl = (url) => {
-                    // Skip proxifying for specific URLs like login redirection
-                    if (url.includes("/login/ldap")) {
-                        return url;
+                    if (shouldExcludeUrl(url)) {
+                        return url;  // Don't proxify these URLs
                     }
 
-                    // Skip already proxified URLs
-                    if (url.startsWith('/API/index.js?url=')) {
-                        return url;
-                    }
-
-                    // If it's a relative URL, we should resolve it to the full base URL
+                    // If it's a relative URL, resolve it to the base URL
                     if (url.startsWith('/') || !url.startsWith('http')) {
                         return `/API/index.js?url=${encodeURIComponent(baseUrl + url)}`;
                     }
 
-                    // Otherwise, handle the absolute URL by returning a proxified version
+                    // Otherwise, return a proxified absolute URL
                     return `/API/index.js?url=${encodeURIComponent(url)}`;
                 };
 
@@ -96,9 +99,8 @@ export default async function handler(req, res) {
                 // Modify JavaScript redirections (like window.location.href, window.open, etc.)
                 const proxifyJsRedirection = (jsCode) => {
                     return jsCode.replace(/(window\.(location|open|replace|assign)\s*=\s*['"])([^'"]+)(['"])/gi, (match, p1, p2, p3, p4) => {
-                        // Check if the URL is in the exclusion list
-                        if (p3.includes("/login/ldap")) {
-                            return match;  // Do not modify these URLs
+                        if (shouldExcludeUrl(p3)) {
+                            return match;  // Skip this redirect if it's in the excluded list
                         }
 
                         const proxifiedUrl = proxifyUrl(p3);
@@ -106,13 +108,13 @@ export default async function handler(req, res) {
                     });
                 };
 
-                // Apply redirection proxification to all JavaScript in the HTML content
+                // Apply the redirection handler to JavaScript in HTML
                 htmlContent = htmlContent.replace(/(<script[^>]*>)([\s\S]*?)(<\/script>)/gi, (match, p1, p2, p3) => {
                     const proxifiedJs = proxifyJsRedirection(p2);
                     return `${p1}${proxifiedJs}${p3}`;
                 });
 
-                // Inject the Eruda script for debugging
+                // Inject the Eruda debugging script into the HTML
                 htmlContent = htmlContent.replace('</body>', `<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script></body>`);
 
                 // Send the modified HTML back
@@ -120,7 +122,7 @@ export default async function handler(req, res) {
                 res.status(response.status).send(htmlContent);
 
             } else {
-                // Return other asset types like CSS, JS as they are
+                // For other asset types like CSS, JS, etc., return them as they are
                 res.setHeader("Content-Type", contentType);
                 res.status(response.status).send(response.data);
             }
