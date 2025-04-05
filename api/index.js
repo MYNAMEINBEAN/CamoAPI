@@ -32,27 +32,31 @@ export default async function handler(req, res) {
 
         if (contentType.includes("text/html")) {
             let htmlContent = Buffer.from(response.data).toString('utf-8');
-            const baseUrl = new URL(url);
+            const baseUrl = new URL(url); // Get the base URL (e.g., https://minecraft.net)
 
+            // Handle image URLs
             const imgRegex = /<img[^>]+src="([^"]+)"/g;
             htmlContent = htmlContent.replace(imgRegex, (match, imgUrl) => {
                 if (imgUrl.startsWith('/')) {
-                    imgUrl = baseUrl.origin + imgUrl;
+                    imgUrl = baseUrl.origin + imgUrl; // Convert to full URL
                 }
                 const proxyImageUrl = `/api/proxy-image?url=${encodeURIComponent(imgUrl)}`;
                 return match.replace(imgUrl, proxyImageUrl);
             });
 
+            // Handle CSS/JS URLs
             const cssJsRegex = /<link[^>]+href="([^"]+)"|<script[^>]+src="([^"]+)"/g;
             htmlContent = htmlContent.replace(cssJsRegex, (match, href1, src2) => {
                 let resourceUrl = href1 || src2;
+
                 if (resourceUrl.startsWith('/')) {
-                    resourceUrl = baseUrl.origin + resourceUrl;
+                    resourceUrl = baseUrl.origin + resourceUrl; // Convert to full URL
                 }
                 const proxyResourceUrl = `/api/proxy-assets?url=${encodeURIComponent(resourceUrl)}`;
                 return match.replace(resourceUrl, proxyResourceUrl);
             });
 
+            // Add Eruda script for debugging
             const erudaScript = `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
                 <script>eruda.init();</script>
