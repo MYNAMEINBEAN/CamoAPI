@@ -81,6 +81,11 @@ export default async function handler(req, res) {
                         return `/API/index.js?url=${encodeURIComponent(baseUrl + url)}`;
                     }
 
+                    // Fix URLs where there is no slash between parts of the domain and path (e.g., 'onlinestyles.css' instead of 'online/styles.css')
+                    if (url.includes('.onlinestyles')) {
+                        url = url.replace('.onlinestyles', '/onlinestyles');  // Add the slash
+                    }
+
                     // Otherwise, return a proxified absolute URL
                     return `/API/index.js?url=${encodeURIComponent(url)}`;
                 };
