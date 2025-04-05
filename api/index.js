@@ -58,7 +58,7 @@ export default async function handler(req, res) {
                 res.setHeader("Content-Type", "application/json");
                 res.status(response.status).json(response.data); // Return JSON data
             } else if (contentType.includes("text/html")) {
-                // If HTML content, modify the links to be proxified
+                // If HTML content, modify the links and redirections to be proxified
                 let htmlContent = response.data;
 
                 // Helper function to proxify URLs
@@ -78,18 +78,29 @@ export default async function handler(req, res) {
                     return `/API/index.js?url=${encodeURIComponent(url)}`;
                 };
 
-                // Modify <link> and <script> tags to proxify URLs
+                // Modify <link>, <script>, and <img> tags to proxify URLs
                 htmlContent = htmlContent.replace(/(<(?:link|script)[^>]+(?:href|src)\s*=\s*['"])([^'"]+)(['"][^>]*>)/gi, (match, p1, p2, p3) => {
-                    // Proxify the URL
                     const proxifiedUrl = proxifyUrl(p2);
                     return `${p1}${proxifiedUrl}${p3}`;
                 });
 
-                // Modify <img> tags to proxify URLs
                 htmlContent = htmlContent.replace(/(<img[^>]+src\s*=\s*['"])([^'"]+)(['"][^>]*>)/gi, (match, p1, p2, p3) => {
-                    // Proxify the URL
                     const proxifiedUrl = proxifyUrl(p2);
                     return `${p1}${proxifiedUrl}${p3}`;
+                });
+
+                // Modify JavaScript redirections (like window.location.href, window.open, etc.)
+                const proxifyJsRedirection = (jsCode) => {
+                    return jsCode.replace(/(window\.(location|open|replace|assign)\s*=\s*['"])([^'"]+)(['"])/gi, (match, p1, p2, p3, p4) => {
+                        const proxifiedUrl = proxifyUrl(p3);
+                        return `${p1}${p2}${proxifiedUrl}${p4}`;
+                    });
+                };
+
+                // Apply redirection proxification to all JavaScript in the HTML content
+                htmlContent = htmlContent.replace(/(<script[^>]*>)([\s\S]*?)(<\/script>)/gi, (match, p1, p2, p3) => {
+                    const proxifiedJs = proxifyJsRedirection(p2);
+                    return `${p1}${proxifiedJs}${p3}`;
                 });
 
                 // Inject the Eruda script for debugging
