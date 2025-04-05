@@ -64,18 +64,18 @@ export default async function handler(req, res) {
                 // Helper function to proxify URLs
                 const proxifyUrl = (url) => {
                     // Skip already proxified URLs
-                    if (url.startsWith('/api/proxy?url=')) {
+                    if (url.startsWith('/API/index.js?url=')) {
                         return url;
                     }
 
                     // If it's a relative URL, we should resolve it to the full base URL
                     if (url.startsWith('/') || !url.startsWith('http')) {
                         // Resolve relative URLs
-                        return `/api/proxy?url=${encodeURIComponent(baseUrl + url)}`;
+                        return `/API/index.js?url=${encodeURIComponent(baseUrl + url)}`;
                     }
 
                     // Otherwise, handle the absolute URL by returning a proxified version
-                    return `/api/proxy?url=${encodeURIComponent(url)}`;
+                    return `/API/index.js?url=${encodeURIComponent(url)}`;
                 };
 
                 // Modify <link> and <script> tags to proxify URLs
