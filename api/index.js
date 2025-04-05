@@ -63,6 +63,11 @@ export default async function handler(req, res) {
 
                 // Helper function to proxify URLs
                 const proxifyUrl = (url) => {
+                    // Skip proxifying for specific URLs like login redirection
+                    if (url.includes("/login/ldap")) {
+                        return url;
+                    }
+
                     // Skip already proxified URLs
                     if (url.startsWith('/API/index.js?url=')) {
                         return url;
@@ -70,7 +75,6 @@ export default async function handler(req, res) {
 
                     // If it's a relative URL, we should resolve it to the full base URL
                     if (url.startsWith('/') || !url.startsWith('http')) {
-                        // Resolve relative URLs
                         return `/API/index.js?url=${encodeURIComponent(baseUrl + url)}`;
                     }
 
@@ -92,6 +96,11 @@ export default async function handler(req, res) {
                 // Modify JavaScript redirections (like window.location.href, window.open, etc.)
                 const proxifyJsRedirection = (jsCode) => {
                     return jsCode.replace(/(window\.(location|open|replace|assign)\s*=\s*['"])([^'"]+)(['"])/gi, (match, p1, p2, p3, p4) => {
+                        // Check if the URL is in the exclusion list
+                        if (p3.includes("/login/ldap")) {
+                            return match;  // Do not modify these URLs
+                        }
+
                         const proxifiedUrl = proxifyUrl(p3);
                         return `${p1}${p2}${proxifiedUrl}${p4}`;
                     });
