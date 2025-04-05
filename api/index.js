@@ -10,12 +10,14 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Decode and clean the URL
         url = decodeURIComponent(url);
         url = url.replace(/%3A/g, ':').replace(/%2F/g, '/');
         console.log(`Proxying: ${url}`);
 
         const agent = new https.Agent({ rejectUnauthorized: false });
 
+        // Fetch the page (HTML) content first
         const response = await axios.get(url, {
             headers: {
                 'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
@@ -49,9 +51,12 @@ export default async function handler(req, res) {
             htmlContent = htmlContent.replace(cssJsRegex, (match, href1, src2) => {
                 let resourceUrl = href1 || src2;
 
+                // If the resource URL is relative, prepend the base URL
                 if (resourceUrl.startsWith('/')) {
                     resourceUrl = baseUrl.origin + resourceUrl; // Convert to full URL
                 }
+
+                // Now proxy this resource via the `/api/proxy-assets`
                 const proxyResourceUrl = `/api/proxy-assets?url=${encodeURIComponent(resourceUrl)}`;
                 return match.replace(resourceUrl, proxyResourceUrl);
             });
