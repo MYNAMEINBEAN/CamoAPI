@@ -13,8 +13,8 @@ export default async function handler(req, res) {
         url = decodeURIComponent(url);
         console.log(`Proxying: ${url}`);
 
-        // Check if the request is for an image
-        const isImageRequest = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(url);
+        // Check if the request is for an image (added more image types)
+        const isImageRequest = /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|ico|webm|avif)$/i.test(url);
 
         // Use the appropriate handler for images or other assets
         if (isImageRequest) {
@@ -56,7 +56,17 @@ export default async function handler(req, res) {
                 res.status(response.status).json(response.data); // Return JSON data
             } else {
                 res.setHeader("Content-Type", contentType);
-                res.status(response.status).send(response.data); // Return as text (CSS/JS)
+
+                // If it's an HTML page, inject Eruda for debugging
+                if (contentType.includes("text/html")) {
+                    // Inject the Eruda script into the HTML content
+                    let htmlContent = response.data;
+                    htmlContent = htmlContent.replace('</body>', `<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script></body>`);
+                    res.status(response.status).send(htmlContent);
+                } else {
+                    // Return as text (CSS/JS)
+                    res.status(response.status).send(response.data);
+                }
             }
         }
 
