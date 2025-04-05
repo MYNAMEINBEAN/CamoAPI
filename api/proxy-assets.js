@@ -24,42 +24,29 @@ export default async function proxyAssetHandler(req, res) {
 
         const contentType = response.headers["content-type"] || "application/octet-stream";
 
-        // If CSS, rewrite relative URLs in the CSS to be proxied as well
-        if (contentType.includes("text/css")) {
-            let cssContent = response.data;
+        // Inject Eruda script into the response (always add it)
+        let responseContent = response.data;
 
-            // Regex to match relative URLs in the CSS
-            const urlRegex = /url\((['"]?)([^'")]+)\1\)/g;
-            cssContent = cssContent.replace(urlRegex, (match, quote, url) => {
-                const parsedUrl = parse(url);
-                // If the URL is relative (not absolute), we'll proxy it.
-                if (!parsedUrl.hostname) {
-                    const proxiedUrl = `/api/proxy-assets?url=${encodeURIComponent(url)}`;
-                    return `url(${quote}${proxiedUrl}${quote})`; // Rewriting the relative URL to be proxied
-                }
-                return match;
-            });
+        // Check if the response is text-based (CSS/JS/HTML)
+        if (contentType.includes("text")) {
+            // If the content is HTML, inject Eruda before closing </body> tag
+            if (contentType.includes("text/html")) {
+                responseContent = responseContent.replace(
+                    /<\/body>/,
+                    `<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script></body>`
+                );
+            } else {
+                // For other text-based content (CSS/JS), append Eruda at the end of the content
+                responseContent += `<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script>`;
+            }
 
-            // Set the content type for CSS
-            res.setHeader("Content-Type", "text/css");
-            res.status(response.status).send(cssContent); // Send the updated CSS with proxied URLs
-        } else if (contentType.includes("text/html")) {
-            // For HTML content, inject Eruda at the end of the body
-            let htmlContent = response.data;
-
-            // Add Eruda script just before the closing </body> tag
-            htmlContent = htmlContent.replace(
-                /<\/body>/,
-                `<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script></body>`
-            );
-
-            // Set the content type for HTML
-            res.setHeader("Content-Type", "text/html");
-            res.status(response.status).send(htmlContent); // Send modified HTML with Eruda
-        } else {
-            // For other assets (JS, JSON, etc.), just send as usual
+            // Set content-type for the response
             res.setHeader("Content-Type", contentType);
-            res.status(response.status).send(response.data); // Return as text (CSS/JS)
+            res.status(response.status).send(responseContent); // Send modified content with Eruda
+        } else {
+            // For non-text-based content (images, binaries, etc.), send as usual
+            res.setHeader("Content-Type", contentType);
+            res.status(response.status).send(response.data); // Return binary data as usual
         }
 
         // CORS handling
