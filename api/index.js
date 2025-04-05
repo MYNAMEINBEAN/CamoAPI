@@ -1,6 +1,5 @@
 import axios from 'axios';
 import https from 'https';
-import urlModule from 'url';
 
 export default async function handler(req, res) {
     let { url } = req.query;
@@ -14,22 +13,10 @@ export default async function handler(req, res) {
         url = decodeURIComponent(url);
         console.log(`Proxying: ${url}`);
 
-        // Extract base URL (protocol + host)
-        const parsedBaseUrl = urlModule.parse(url);
-        const baseUrl = `${parsedBaseUrl.protocol}//${parsedBaseUrl.host}`;
+        const isImageRequest = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(url);
+        const isJsonRequest = url.endsWith('.json');
 
-        const excludedPaths = ['/login/ldap', '/login', '/oauth', '/api/auth'];
-
-        // Check if the URL should be excluded (e.g., login pages)
-        const shouldExcludeUrl = (url) => {
-            return excludedPaths.some(excludedPath => url.includes(excludedPath));
-        };
-
-        const isImageRequest = /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|ico|webm|avif)$/i.test(url);
-        const isJsonRequest = /\.json$/i.test(url);
-        const isScriptRequest = /\.(js)$/i.test(url);
-        
-        // Handle image requests
+        // Handle Image Request (such as .jpg, .png)
         if (isImageRequest) {
             const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -43,93 +30,56 @@ export default async function handler(req, res) {
             res.setHeader("Content-Type", contentType);
             res.setHeader("Access-Control-Allow-Origin", "*");
 
-            res.status(response.status).send(Buffer.from(response.data));
-
-        } 
-        // Handle JSON requests
-        else if (isJsonRequest) {
-            const agent = new https.Agent({ rejectUnauthorized: false });
-
-            const response = await axios.get(url, {
-                httpsAgent: agent,
-                responseType: 'json',
-                timeout: 30000,
-            });
-
-            const contentType = response.headers["content-type"] || "application/json";
-
-            res.setHeader("Content-Type", contentType);
-            res.setHeader("Access-Control-Allow-Origin", "*");
-
-            res.status(response.status).json(response.data);
-
-        } 
-        // Handle other requests (HTML, CSS, JS)
-        else {
-            const agent = new https.Agent({ rejectUnauthorized: false });
-
-            const response = await axios.get(url, {
-                httpsAgent: agent,
-                responseType: 'text',
-                timeout: 30000,
-            });
-
-            const contentType = response.headers["content-type"] || "application/octet-stream";
-
-            res.setHeader("Access-Control-Allow-Origin", "*");
-            res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-            res.setHeader("Access-Control-Allow-Headers", "Content-Type, User-Agent, Referer");
-
-            if (contentType.includes("application/json")) {
-                res.setHeader("Content-Type", "application/json");
-                res.status(response.status).json(response.data);
-            } else if (contentType.includes("text/html")) {
-                let htmlContent = response.data;
-
-                // Function to proxify URLs
-                const proxifyUrl = (url) => {
-                    if (shouldExcludeUrl(url)) {
-                        return url;
-                    }
-
-                    if (url.startsWith('/') || !url.startsWith('http')) {
-                        return `/API/index.js?url=${encodeURIComponent(baseUrl + (url.startsWith('/') ? url : '/' + url))}`;
-                    }
-
-                    if (url.includes('.onlinestyles')) {
-                        url = url.replace('.onlinestyles', '/onlinestyles');
-                    }
-
-                    if (url.startsWith(baseUrl)) {
-                        return `/API/index.js?url=${encodeURIComponent(url)}`;
-                    }
-
-                    return `/API/index.js?url=${encodeURIComponent(url)}`;
-                };
-
-                // Replace link and script src with proxified URL
-                htmlContent = htmlContent.replace(/(<(?:link|script)[^>]+(?:href|src)\s*=\s*['"])([^'"]+)(['"][^>]*>)/gi, (match, p1, p2, p3) => {
-                    const proxifiedUrl = proxifyUrl(p2);
-                    return `${p1}${proxifiedUrl}${p3}`;
-                });
-
-                // Handle <img> src attribute
-                htmlContent = htmlContent.replace(/(<img[^>]+src\s*=\s*['"])([^'"]+)(['"][^>]*>)/gi, (match, p1, p2, p3) => {
-                    const proxifiedUrl = proxifyUrl(p2);
-                    return `${p1}${proxifiedUrl}${p3}`;
-                });
-
-                // Add Eruda for inspecting the page
-                htmlContent = htmlContent.replace('</body>', `<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script></body>`);
-
-                res.setHeader("Content-Type", "text/html");
-                res.status(response.status).send(htmlContent);
-
-            } else {
-                res.setHeader("Content-Type", contentType);
-                res.status(response.status).send(response.data);
-            }
+            // Send the image back as binary data
+            return res.status(response.status).send(Buffer.from(response.data));
         }
+
+        // Handle non-image content (HTML, CSS, JS, JSON)
+        const agent = new https.Agent({ rejectUnauthorized: false });
+        const response = await axios.get(url, {
+            httpsAgent: agent,
+            responseType: 'text',
+            timeout: 30000,
+        });
+
+        let contentType = response.headers["content-type"] || "text/html";
+        let data = response.data;
+
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, User-Agent, Referer");
+
+        // If it's HTML or CSS or JS, replace links and URLs inside HTML content
+        if (contentType.includes("text/html") || contentType.includes("text/css") || contentType.includes("application/javascript")) {
+            data = data.replace(/(["'])((http[s]?:\/\/)?[\w.-]+(?:\/[\w.-]*)?)(["'])/g, (match, p1, p2, p3, p4) => {
+                // Proxy all URLs except for those inside JSON response or images
+                if (!p2.startsWith('http')) {
+                    return `${p1}/API/index.js?url=${encodeURIComponent(p2)}${p4}`;
+                }
+                return match;
+            });
+
+            data = data.replace(/window\.location\.href\s*=\s*["']([^"']+)["']/g, (match, p1) => {
+                // Proxify window location.href assignments
+                return `window.location.href = "/API/index.js?url=${encodeURIComponent(p1)}"`;
+            });
+
+            data = data.replace(/window\.open\s*?\(\s*?["']([^"']+)["']\s*?\)/g, (match, p1) => {
+                // Proxify window.open() calls
+                return `window.open("/API/index.js?url=${encodeURIComponent(p1)}")`;
+            });
+        }
+
+        // For JSON files, don't modify internal URLs
+        if (isJsonRequest) {
+            // Just send back the JSON as-is without modification
+            res.setHeader("Content-Type", "application/json");
+            return res.status(response.status).json(response.data);
+        }
+
+        // For other content like CSS, JS, etc., just pass through
+        res.setHeader("Content-Type", contentType);
+        res.status(response.status).send(data);
 
     } catch (error) {
         console.error(`Error fetching: ${error.message}`);
