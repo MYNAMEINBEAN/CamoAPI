@@ -15,6 +15,8 @@ export default async function handler(req, res) {
 
         const isImageRequest = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(url);
         const isJsonRequest = url.endsWith('.json');
+        const isCssRequest = url.endsWith('.css');
+        const isJsRequest = url.endsWith('.js');
 
         // Handle Image Request (such as .jpg, .png)
         if (isImageRequest) {
@@ -51,26 +53,27 @@ export default async function handler(req, res) {
 
         // If it's HTML or CSS or JS, replace links and URLs inside HTML content
         if (contentType.includes("text/html") || contentType.includes("text/css") || contentType.includes("application/javascript")) {
+            // Replace links for CSS and JS files in HTML content
             data = data.replace(/(["'])((http[s]?:\/\/)?[\w.-]+(?:\/[\w.-]*)?)(["'])/g, (match, p1, p2, p3, p4) => {
-                // Proxy all URLs except for those inside JSON response or images
-                if (!p2.startsWith('http')) {
+                // Check if the link is an external resource and not already proxified
+                if (!p2.startsWith('http') && !p2.startsWith('/API')) {
                     return `${p1}/API/index.js?url=${encodeURIComponent(p2)}${p4}`;
                 }
                 return match;
             });
 
+            // Replace window.location.href assignments to ensure proxified URLs
             data = data.replace(/window\.location\.href\s*=\s*["']([^"']+)["']/g, (match, p1) => {
-                // Proxify window location.href assignments
                 return `window.location.href = "/API/index.js?url=${encodeURIComponent(p1)}"`;
             });
 
+            // Replace window.open() calls to ensure proxified URLs
             data = data.replace(/window\.open\s*?\(\s*?["']([^"']+)["']\s*?\)/g, (match, p1) => {
-                // Proxify window.open() calls
                 return `window.open("/API/index.js?url=${encodeURIComponent(p1)}")`;
             });
         }
 
-        // For JSON files, don't modify internal URLs
+        // For JSON files, don't modify internal URLs (no changes here)
         if (isJsonRequest) {
             // Just send back the JSON as-is without modification
             res.setHeader("Content-Type", "application/json");
