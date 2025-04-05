@@ -23,7 +23,7 @@ export default async function handler(req, res) {
             },
             httpsAgent: agent,
             responseType: 'arraybuffer',
-            timeout: 10000, // Timeout after 10 seconds
+            timeout: 10000,
         });
 
         const contentType = response.headers["content-type"] || "application/octet-stream";
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
                 if (resourceUrl.startsWith('/')) {
                     resourceUrl = baseUrl.origin + resourceUrl;
                 }
-                const proxyResourceUrl = `/api/proxy-image?url=${encodeURIComponent(resourceUrl)}`;
+                const proxyResourceUrl = `/api/proxy-assets?url=${encodeURIComponent(resourceUrl)}`;
                 return match.replace(resourceUrl, proxyResourceUrl);
             });
 
