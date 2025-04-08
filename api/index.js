@@ -18,11 +18,10 @@ export default async function handler(req, res) {
 
         const agent = new https.Agent({ rejectUnauthorized: false });
 
-        // Figure out what kind of request this is
         const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
         const isBinary = /\.(woff2?|ttf|eot|otf|ico)$/i.test(url);
         const isJson = /\.json$/i.test(url);
-        const isHtml = /\.(html?|\/)$/i.test(url); // ends with .html or /
+        const isJs = /\.js$/i.test(url);
 
         const response = await axios.get(url, {
             httpsAgent: agent,
@@ -38,23 +37,20 @@ export default async function handler(req, res) {
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Content-Type", contentType);
 
-        // Send binary files (images, fonts, etc.)
         if (isImage || isBinary) {
             return res.status(response.status).send(Buffer.from(response.data));
         }
 
-        // Send JSON
         if (isJson) {
             return res.status(response.status).json(response.data);
         }
 
         let data = response.data;
 
-        // Rewrite internal links inside HTML
-        if (contentType.includes('text/html')) {
+        // Only rewrite if it's HTML and not a JS file
+        if (!isJs && contentType.includes('text/html')) {
             const baseUrl = new URL(url);
 
-            // Rewrite src/href links
             data = data.replace(/(src|href)=["']([^"']+)["']/gi, (match, attr, link) => {
                 try {
                     if (link.startsWith('data:') || link.startsWith('mailto:') || link.startsWith('javascript:')) {
@@ -62,24 +58,28 @@ export default async function handler(req, res) {
                     }
 
                     const absoluteUrl = new URL(link, baseUrl).toString();
-                    const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
+                    const proxied = `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
                     return `${attr}="${proxied}"`;
                 } catch (e) {
                     return match;
                 }
             });
 
-            // Rewrite window.location.href
             data = data.replace(/window\.location\.href\s*=\s*["']([^"']+)["']/g, (_, link) => {
                 const target = new URL(link, baseUrl).toString();
-                return `window.location.href = "/API/index.js?url=${encodeURIComponent(target)}"`;
+                return `window.location.href = "/api/proxy?url=${encodeURIComponent(target)}"`;
             });
 
-            // Rewrite window.open
             data = data.replace(/window\.open\s*\(\s*["']([^"']+)["']\s*\)/g, (_, link) => {
                 const target = new URL(link, baseUrl).toString();
-                return `window.open("/API/index.js?url=${encodeURIComponent(target)}")`;
+                return `window.open("/api/proxy?url=${encodeURIComponent(target)}")`;
             });
+
+            // Inject Eruda for debugging
+            data = data.replace(/<\/body>/i, `
+                <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+                <script>eruda.init();</script>
+            </body>`);
         }
 
         return res.status(response.status).send(data);
