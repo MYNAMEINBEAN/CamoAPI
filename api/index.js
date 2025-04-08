@@ -51,6 +51,7 @@ export default async function handler(req, res) {
         if (!isJs && contentType.includes('text/html')) {
             const baseUrl = new URL(url);
 
+            // Rewrite src/href links
             data = data.replace(/(src|href)=["']([^"']+)["']/gi, (match, attr, link) => {
                 try {
                     if (link.startsWith('data:') || link.startsWith('mailto:') || link.startsWith('javascript:')) {
@@ -58,21 +59,23 @@ export default async function handler(req, res) {
                     }
 
                     const absoluteUrl = new URL(link, baseUrl).toString();
-                    const proxied = `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+                    const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
                     return `${attr}="${proxied}"`;
                 } catch (e) {
                     return match;
                 }
             });
 
+            // Rewrite window.location.href
             data = data.replace(/window\.location\.href\s*=\s*["']([^"']+)["']/g, (_, link) => {
                 const target = new URL(link, baseUrl).toString();
-                return `window.location.href = "/api/proxy?url=${encodeURIComponent(target)}"`;
+                return `window.location.href = "/API/index.js?url=${encodeURIComponent(target)}"`;
             });
 
+            // Rewrite window.open
             data = data.replace(/window\.open\s*\(\s*["']([^"']+)["']\s*\)/g, (_, link) => {
                 const target = new URL(link, baseUrl).toString();
-                return `window.open("/api/proxy?url=${encodeURIComponent(target)}")`;
+                return `window.open("/API/index.js?url=${encodeURIComponent(target)}")`;
             });
 
             // Inject Eruda for debugging
