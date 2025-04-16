@@ -52,7 +52,7 @@ export default async function handler(req, res) {
             const baseUrl = new URL(url);
 
             // Rewrite src/href links
-            data = data.replace(/(src|href|srcset)=["']([^"']+)["']/gi, (match, attr, link) => {
+            data = data.replace(/(src|href|srcset|poster)=["']([^"']+)["']/gi, (match, attr, link) => {
                 try {
                     if (link.startsWith('data:') || link.startsWith('mailto:') || link.startsWith('javascript:')) {
                         return match;
