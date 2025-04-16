@@ -182,7 +182,51 @@ data = data.replace(/%20/g, ' ')
            .replace(/%7C/g, '|')
            .replace(/%7D/g, '}')
            .replace(/%7E/g, '~');
-        
+
+            // This code processes the content="" attribute, extracts URLs inside, bases them using the provided base URL, and updates the content.
+data = data.replace(/content="([^"]+)"/g, (match, jsonContent) => {
+    try {
+        let jsonData = JSON.parse(decodeURIComponent(jsonContent));
+
+        if (jsonData.assets) {
+            if (jsonData.assets.video) {
+                for (let size in jsonData.assets.video) {
+                    for (let format in jsonData.assets.video[size]) {
+                        const relativeUrl = jsonData.assets.video[size][format];
+                        if (!relativeUrl.startsWith('data:') && !relativeUrl.startsWith('http')) {
+                            jsonData.assets.video[size][format] = new URL(relativeUrl, baseUrl).toString();
+                        }
+                    }
+                }
+            }
+
+            if (jsonData.assets.poster) {
+                for (let size in jsonData.assets.poster) {
+                    const relativeUrl = jsonData.assets.poster[size];
+                    if (!relativeUrl.startsWith('data:') && !relativeUrl.startsWith('http')) {
+                        jsonData.assets.poster[size] = new URL(relativeUrl, baseUrl).toString();
+                    }
+                }
+            }
+
+            if (jsonData.assets.image) {
+                for (let size in jsonData.assets.image) {
+                    const relativeUrl = jsonData.assets.image[size].src;
+                    if (!relativeUrl.startsWith('data:') && !relativeUrl.startsWith('http')) {
+                        jsonData.assets.image[size].src = new URL(relativeUrl, baseUrl).toString();
+                    }
+                }
+            }
+        }
+
+        const updatedContent = JSON.stringify(jsonData);
+        return `content="${encodeURIComponent(updatedContent)}"`;
+
+    } catch (e) {
+        console.error("Error processing content:", e);
+        return match;
+    }
+});
         return res.status(response.status).send(data);
 
     } catch (err) {
