@@ -82,6 +82,8 @@ export default async function handler(req, res) {
 
             data = data.replace(/srcset="[^"]*"/g, '');
 
+            data = data.replace(`<img`, `<img style="background-size: cover;"`);
+
             // Inject Eruda for debugging
             data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
