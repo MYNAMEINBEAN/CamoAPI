@@ -78,6 +78,8 @@ export default async function handler(req, res) {
                 return `window.open("/API/index.js?url=${encodeURIComponent(target)}")`;
             });
 
+            data = data.replace('loading="lazy"', 'loading="eager"');
+
             // Inject Eruda for debugging
             data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
