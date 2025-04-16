@@ -80,6 +80,8 @@ export default async function handler(req, res) {
 
             data = data.replace('loading="lazy"', 'loading="eager"');
 
+            data = data.replace(`srcset="` + * + `"`);
+
             // Inject Eruda for debugging
             data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
