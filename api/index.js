@@ -88,7 +88,7 @@ export default async function handler(req, res) {
                 <script>eruda.init();</script>
             </body>`);
             
-                data = data.replace(/url\(\.\.\/([^)\s]+)\)/g, 'url(..$1)');
+                data = data.replace(/url\((['"]?)\.\.\/([^)'"]+)\1\)/g, 'url($1..$2$1)');
             
         }
         
