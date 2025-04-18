@@ -88,7 +88,11 @@ export default async function handler(req, res) {
                 <script>eruda.init();</script>
             </body>`);
             
-            data = data.replace(/url\(\.\.\/([^'")]+)\)/g, 'url(/API/index.js?url=../$1)');
+            data = data.replace(/url\(\.\.\/([^'")]+)\)/g, (match, p1) => {
+                // Ensure the URL is being encoded properly for the proxy
+                const proxiedUrl = `/API/index.js?url=../${encodeURIComponent(p1)}`;
+                return `url(${proxiedUrl})`;
+            });
             
         }
         
