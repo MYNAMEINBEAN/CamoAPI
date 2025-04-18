@@ -89,6 +89,7 @@ export default async function handler(req, res) {
             </body>`);
             
             data = data.replace(/(--background-image\s*:\s*url\(["']?)([^"')]+)(["']?\))/g, (match, prefix, url, suffix) => {
+                if (url.startsWith('http')) return match;  // Ignore absolute URLs
                 const proxiedUrl = `/API/index.js?url=${encodeURIComponent(url)}`;
                 return `${prefix}${proxiedUrl}${suffix}`;
             });
