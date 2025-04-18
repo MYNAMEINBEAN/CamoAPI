@@ -87,6 +87,10 @@ export default async function handler(req, res) {
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
                 <script>eruda.init();</script>
             </body>`);
+
+            if (window.location.href.includes('.css')) {
+                data.replace('url(../', 'url(..)';
+            }
         }
         
 data = data.replace(/%20/g, ' ')
