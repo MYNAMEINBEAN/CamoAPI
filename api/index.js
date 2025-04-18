@@ -82,8 +82,6 @@ export default async function handler(req, res) {
 
             data = data.replace(/srcset="[^"]*"/g, '');
 
-            data = data.replace(/image:url(/g, `image:url('/API/index.js?url=` + baseUrl + `);
-
             // Inject Eruda for debugging
             data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
