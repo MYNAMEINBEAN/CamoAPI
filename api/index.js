@@ -89,6 +89,7 @@ export default async function handler(req, res) {
             </body>`);
             
                 data = data.replace(/url\((['"]?)\.\.\/([^)'"]+)\1\)/g, 'url($1..$2$1)');
+
             
         }
         
