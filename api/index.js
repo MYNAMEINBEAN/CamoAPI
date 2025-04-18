@@ -89,7 +89,7 @@ export default async function handler(req, res) {
             </body>`);
 
             if (window.location.href.includes('.css')) {
-                data.replace('url(../', 'url(..)';
+                data.replace(/`url(../[^]`/g, `url(..[^]`;
             }
         }
         
