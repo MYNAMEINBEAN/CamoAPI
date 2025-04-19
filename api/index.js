@@ -73,23 +73,30 @@ export default async function handler(req, res) {
                 }
             });
 
-            data = data.replace(/window\.location\.href\s*=\s*["']([^"']+)["']/g, (_, link) => {
-                const target = new URL(link, baseUrl).toString();
-                return `window.location.href = "/API/index.js?url=${encodeURIComponent(target)}"`;
-            });
-
-            data = data.replace(/window\.open\s*\(\s*["']([^"']+)["']\s*\)/g, (_, link) => {
-                const target = new URL(link, baseUrl).toString();
-                return `window.open("/API/index.js?url=${encodeURIComponent(target)}")`;
-            });
-
             data = data.replace('loading="lazy"', 'loading="eager"');
 
-            data = data.replace(/window\.location\s*=\s*["'`](.*?)["'`]/g, (_, link) => {
-                const target = new URL(link || '.', baseUrl).toString();
-                const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
-                return `window.location = '${proxied}'`;
-            });
+            const redirectPatterns = [
+                /(?:window\.|top\.|document\.)?location(?:\.href)?\s*=\s*["'`](.*?)["'`]/gi,
+                /window\.open\s*\(\s*["'`](.*?)["'`]\s*(,.*?)?\)/gi,
+            ];
+            
+            for (const pattern of redirectPatterns) {
+                data = data.replace(pattern, (...args) => {
+                    let link = args[1];
+                    let extra = args[2] || '';
+                    try {
+                        const target = new URL(link || '.', baseUrl).toString();
+                        const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
+                        if (pattern.source.startsWith("window.open")) {
+                            return `window.open('${proxied}'${extra})`;
+                        } else {
+                            return `window.location = '${proxied}'`;
+                        }
+                    } catch (e) {
+                        return args[0];
+                    }
+                });
+            }
             
             data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
