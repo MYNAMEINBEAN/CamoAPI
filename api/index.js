@@ -60,7 +60,7 @@ export default async function handler(req, res) {
         if (!isJs && contentType.includes('text/html')) {
             const baseUrl = new URL(url);
 
-            data = data.replace(/(src|href|srcset|poster|url(')=["']([^"']+)["']/gi, (match, attr, link) => {
+            data = data.replace(/(src|href|srcset|poster)=["']([^"']+)["']/gi, (match, attr, link) => {
                 try {
                     if (link.startsWith('data:') || link.startsWith('mailto:') || link.startsWith('javascript:')) {
                         return match;
@@ -84,6 +84,7 @@ export default async function handler(req, res) {
             });
 
             data = data.replace('loading="lazy"', 'loading="eager"');
+            
             data = data.replace(/srcset="[^"]*"/g, '');
 
             data = data.replace(/<\/body>/i, `
@@ -96,6 +97,13 @@ export default async function handler(req, res) {
                 const proxiedUrl = `/API/index.js?url=${encodeURIComponent(url)}`;
                 return `${prefix}${proxiedUrl}${suffix}`;
             });
+
+            data = data.replace(/url\(["']?(?!data:|http|\/\/)([^"')]+)["']?\)/gi, (match, relativePath) => {
+                const absolute = new URL(relativePath, baseUrl).toString();
+                const proxied = `/API/index.js?url=${encodeURIComponent(absolute)}`;
+                return `url('${proxied}')`;
+            });
+
         }
 
         // Replace percent-encoded characters
