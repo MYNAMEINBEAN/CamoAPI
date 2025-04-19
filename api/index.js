@@ -60,7 +60,7 @@ export default async function handler(req, res) {
         if (!isJs && contentType.includes('text/html')) {
             const baseUrl = new URL(url);
 
-            data = data.replace(/(src|href|srcset|poster)=["']([^"']+)["']/gi, (match, attr, link) => {
+            data = data.replace(/(src|href|srcset|poster|url(')=["']([^"']+)["']/gi, (match, attr, link) => {
                 try {
                     if (link.startsWith('data:') || link.startsWith('mailto:') || link.startsWith('javascript:')) {
                         return match;
