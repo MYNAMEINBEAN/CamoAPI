@@ -115,6 +115,16 @@ export default async function handler(req, res) {
                 return `url('${proxied}')`;
             });
 
+            data = data.replace(/<iframe\s+[^>]*src=["'](.*?)["'][^>]*>/gi, (match, link) => {
+                try {
+                    const target = new URL(link || '.', baseUrl).toString();
+                    const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
+                    return match.replace(link, proxied);
+                } catch (e) {
+                    return match;
+                }
+            });
+
         }
 
         // Replace percent-encoded characters
