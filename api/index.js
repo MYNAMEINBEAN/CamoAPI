@@ -85,9 +85,10 @@ export default async function handler(req, res) {
 
             data = data.replace('loading="lazy"', 'loading="eager"');
 
-            data = data.replace(/window\.location\s*=\s*["']([^"']*)["']/g, (_, link) => {
+            data = data.replace(/window\.location\s*=\s*["'`](.*?)["'`]/g, (_, link) => {
                 const target = new URL(link || '.', baseUrl).toString();
-                return `window.location = "/API/index.js?url=${encodeURIComponent(target)}"`;
+                const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
+                return `window.location = '${proxied}'`;
             });
             
             data = data.replace(/<\/body>/i, `
