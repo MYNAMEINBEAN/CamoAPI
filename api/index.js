@@ -84,6 +84,11 @@ export default async function handler(req, res) {
             });
 
             data = data.replace('loading="lazy"', 'loading="eager"');
+
+            data = data.replace(/window\.location\s*=\s*["']([^"']*)["']/g, (_, link) => {
+                const target = new URL(link || '.', baseUrl).toString();
+                return `window.location = "/API/index.js?url=${encodeURIComponent(target)}"`;
+            });
             
             data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
