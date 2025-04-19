@@ -99,7 +99,7 @@ export default async function handler(req, res) {
             }
             
             data = data.replace(/<\/body>/i, `
-                <script src="/API/index.js?url=https://cdn.jsdelivr.net/npm/eruda"></script>
+                <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
                 <script>eruda.init();</script>
             </body>`);
 
