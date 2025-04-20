@@ -124,6 +124,17 @@ export default async function handler(req, res) {
                     return match;
                 }
             });
+
+            if (url.includes('google.com/search')) {
+            data = `
+            <body>
+            <script>
+            alert('Google will attempt to load from 3-30 or more times before it succedes');
+            window.location.href = '/API/google/index.js?url=' + ` + url + `;
+            </script>
+            </body>
+            `
+            }
         }
 
         // FULL percent-encoding replacements
