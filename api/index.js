@@ -136,6 +136,8 @@ export default async function handler(req, res) {
                 </script>
                 </body>
             `;
+        } else if (url.includes .google.com) {
+            data = data;
         }
 
 
