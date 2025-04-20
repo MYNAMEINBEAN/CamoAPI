@@ -130,7 +130,7 @@ export default async function handler(req, res) {
             <body>
             <script>
             alert('Google will attempt to load from 3-30 or more times before it succedes');
-            window.location.href = '/API/google/index.js?url=' + ` + url + `;
+            window.location.href = '/API/google/index.js?url=${encodeURIComponent(url};
             </script>
             </body>
             `
