@@ -123,9 +123,8 @@ export default async function handler(req, res) {
                     return match;
                 }
             });
-            const formRegex = /<form\s+class="tsf"[^>]*role="search"[^>]*>[\s\S]*?<\/form>/i;
     
-            data = data.replace(formRegex, '');
+            data = data.replace('<form class="tsf" action="/search" id="tsf" autocomplete="off" data-submitfalse="q" method="GET" name="f" role="search" style="max-width: 672px;">', '<form class="tsf" id="tsf" autocomplete="off" style="max-width: 672px;">');
         }
 
         // FULL percent-encoding replacements
