@@ -12,6 +12,12 @@ export default async function handler(req, res) {
     let { url } = req.query;
     if (!url) return res.status(400).send("Missing `url` query parameter.");
 
+    if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
+        var originalSearchUrl = 'https://google.com' + window.location.search;
+        window.location.href = '/API/google/index.js?url=' + encodeURIComponent(originalSearchUrl);
+    }
+
+    
     try {
         url = decodeURIComponent(url);
         console.log(`Proxying: ${url}`);
@@ -139,13 +145,7 @@ export default async function handler(req, res) {
         } else if (url.includes('.google.com')) {
             data = data;
         }
-
-        if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
-            var originalSearchUrl = 'https://google.com' + window.location.search;
-            window.location.href = '/API/google/index.js?url=' + encodeURIComponent(originalSearchUrl);
-        }
-
-
+        
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
             .replace(/%21/g, '!')
