@@ -122,17 +122,32 @@ var Di=function(a,b,c){a<b?Ci(a+1,b):_.Kc.log(Error("fa`"+a+"`"+b),{url:c})},Ci=
  <script>
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.querySelector('.gLFyf');
+        const searchForm = searchInput.closest('form');
+        
+        // Enable the input field for typing
+        searchInput.removeAttribute('disabled');
 
+        // Allow form submission by handling the Enter key
         searchInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
-                event.preventDefault();
-                const searchQuery = searchInput.value.trim();
-                if (searchQuery) {
-                    console.log("Redirecting to:", '/API/index.js?url=' + encodeURIComponent(`https://google.com/search?q=${searchQuery}`));
-                    window.location.href = '/API/index.js?url=' + encodeURIComponent(`https://google.com/search?q=${searchQuery}`);
-                }
+                // Submit the form when Enter is pressed
+                searchForm.submit();
             }
         });
+
+        // Handle form submission
+        if (searchForm) {
+            searchForm.addEventListener('submit', (event) => {
+                // Prevent the default action (if you want to intercept the submission)
+                event.preventDefault();
+                
+                // Example: Get the input value and redirect to Google search with it
+                const query = searchInput.value.trim();
+                if (query) {
+                    window.location.href = `https://google.com/search?q=${encodeURIComponent(query)}`;
+                }
+            });
+        }
     });
     </script>
             </body><div id="eruda" style="all: initial;"></div><div class="__chobitsu-hide__" style="all: initial;"></div></html>
