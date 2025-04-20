@@ -121,41 +121,56 @@ var Di=function(a,b,c){a<b?Ci(a+1,b):_.Kc.log(Error("fa`"+a+"`"+b),{url:c})},Ci=
                 <script>eruda.init();</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Try to hide or disable Google’s original input box
-  const originalInput = document.querySelector('.gLFyf');
-  if (originalInput) {
-    originalInput.style.display = 'none'; // Or originalInput.remove();
-  }
+  // Find the container div
+  const container = document.querySelector('div.a4bIc');
 
-  // Create a replacement input box
-  const customInput = document.createElement('textarea');
-  customInput.placeholder = "Search Google...";
-  customInput.style.cssText = `
-    font-size: 20px;
-    padding: 10px;
-    width: 60%;
-    display: block;
-    margin: 100px auto;
-    font-family: sans-serif;
-  `;
-  document.body.appendChild(customInput);
-  customInput.focus();
+  if (container) {
+    // Hide the original textarea
+    const original = container.querySelector('textarea.gLFyf');
+    if (original) original.style.display = 'none';
 
-  // Add enter key behavior
-  customInput.addEventListener('keydown', event => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      const query = customInput.value.trim();
-      if (query) {
-        const encoded = encodeURIComponent(`https://google.com/search?q=${query}`);
-        window.location.href = `/API/index.js?url=${encoded}`;
+    // Create the new textarea
+    const customInput = document.createElement('textarea');
+    customInput.className = 'gLFyf';
+    customInput.placeholder = "Search";
+    customInput.setAttribute('autocomplete', 'off');
+    customInput.setAttribute('autocorrect', 'off');
+    customInput.setAttribute('spellcheck', 'false');
+    customInput.setAttribute('maxlength', '2048');
+    customInput.setAttribute('rows', '1');
+    customInput.setAttribute('aria-label', 'Search');
+    customInput.style.cssText = `
+      line-height: 22px;
+      font-size: 16px;
+      flex: 100%;
+      font-family: Roboto,Arial,sans-serif;
+      border: none;
+      background-color: transparent;
+      color: rgba(0,0,0,.87);
+      padding: 0;
+      margin: 0;
+      resize: none;
+      outline: none;
+      width: 100%;
+    `;
+
+    // Append the new input to the container
+    container.appendChild(customInput);
+    customInput.focus();
+
+    // Handle "Enter" press
+    customInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = customInput.value.trim();
+        if (query) {
+          const encoded = encodeURIComponent(`https://google.com/search?q=${query}`);
+          window.location.href = `/API/index.js?url=${encoded}`;
+        }
       }
-    }
-  });
+    });
+  }
 });
 </script>
-
-
-
 
             </body><div id="eruda" style="all: initial;"></div><div class="__chobitsu-hide__" style="all: initial;"></div></html>
