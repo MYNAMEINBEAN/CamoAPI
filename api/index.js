@@ -130,13 +130,14 @@ export default async function handler(req, res) {
             data = `
                 <body>
                 <script>
-                    alert('If you are searching google, it will have from 3-30 or more attempts before it searches properly');
+                    alert('If you are searching Google, it will have from 3-30 or more attempts before it searches properly');
                     
-                    window.location.href = '/API/google/index.js?url='` + `encodeURIComponent('${url}');` +
-                `</script>
+                    window.location.href = '/API/google/index.js?url=' + encodeURIComponent('${url}');
+                </script>
                 </body>
-            `
-        }       
+            `;
+        }
+
 
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
