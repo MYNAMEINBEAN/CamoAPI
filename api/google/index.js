@@ -126,6 +126,26 @@ export default async function handler(req, res) {
 
         }
 
+        if (url.includes('google.com/search')) {
+            data = 
+                <body>
+                <script>
+                    alert('If you are searching Google, it will have from 3-30 or more attempts before it searches properly');
+                    
+                    window.location.href = '/API/google/index.js?url=' + encodeURIComponent('${url}');
+                </script>
+                </body>
+            ;
+        } else if (url.includes('.google.com')) {
+            data = data;
+        }
+
+        if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
+            var originalSearchUrl = 'https://google.com' + window.location.search;
+            window.location.href = '/API/google/index.js?url=' + encodeURIComponent(originalSearchUrl);
+        }
+
+
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
             .replace(/%21/g, '!')
