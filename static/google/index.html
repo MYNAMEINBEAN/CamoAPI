@@ -121,56 +121,41 @@ var Di=function(a,b,c){a<b?Ci(a+1,b):_.Kc.log(Error("fa`"+a+"`"+b),{url:c})},Ci=
                 <script>eruda.init();</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Find the container div
+  // Target the container div
   const container = document.querySelector('div.a4bIc');
 
   if (container) {
-    // Hide the original textarea
-    const original = container.querySelector('textarea.gLFyf');
-    if (original) original.style.display = 'none';
+    // Remove the original Google input
+    const originalInput = container.querySelector('textarea.gLFyf');
+    if (originalInput) originalInput.remove();
 
-    // Create the new textarea
+    // Create our custom textarea
     const customInput = document.createElement('textarea');
     customInput.className = 'gLFyf';
-    customInput.placeholder = "Search";
+    customInput.id = 'myCustomInput'; // 🔁 new ID
+    customInput.placeholder = 'Search';
     customInput.setAttribute('autocomplete', 'off');
     customInput.setAttribute('autocorrect', 'off');
     customInput.setAttribute('spellcheck', 'false');
     customInput.setAttribute('maxlength', '2048');
     customInput.setAttribute('rows', '1');
-    customInput.setAttribute('aria-label', 'Search');
-    customInput.style.cssText = `
-      line-height: 22px;
-      font-size: 16px;
-      flex: 100%;
-      font-family: Roboto,Arial,sans-serif;
-      border: none;
-      background-color: transparent;
-      color: rgba(0,0,0,.87);
-      padding: 0;
-      margin: 0;
-      resize: none;
-      outline: none;
-      width: 100%;
-    `;
 
-    // Append the new input to the container
-    container.appendChild(customInput);
-    customInput.focus();
-
-    // Handle "Enter" press
-    customInput.addEventListener('keydown', e => {
+    // Add event listener for Enter
+    customInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        const query = customInput.value.trim();
+        const query = encodeURIComponent(customInput.value.trim());
         if (query) {
-          const encoded = encodeURIComponent(`https://google.com/search?q=${query}`);
-          window.location.href = `/API/index.js?url=${encoded}`;
+          window.location.href = `/API/index.js?url=https://google.com/search?q=${query}`;
         }
       }
     });
+
+    // Append new input to the same container
+    container.appendChild(customInput);
   }
 });
 </script>
+
 
             </body><div id="eruda" style="all: initial;"></div><div class="__chobitsu-hide__" style="all: initial;"></div></html>
