@@ -126,15 +126,16 @@ export default async function handler(req, res) {
             });
 
             if (url.includes('google.com/search')) {
-            data = `
-            <body>
-            <script>
-            alert('Google will attempt to load from 3-30 or more times before it succedes');
-            window.location.href = '/API/google/index.js?url=${encodeURIComponent(url};
-            </script>
-            </body>
-            `
+                return res.send(`
+                    <body>
+                        <script>
+                            alert('Google will attempt to load from 3–30 or more times before it succeeds.');
+                            window.location.href = '/API/google/index.js?url=' + encodeURIComponent(${JSON.stringify(url)});
+                        </script>
+                    </body>
+                `);
             }
+
         }
 
         // FULL percent-encoding replacements
