@@ -121,41 +121,48 @@ var Di=function(a,b,c){a<b?Ci(a+1,b):_.Kc.log(Error("fa`"+a+"`"+b),{url:c})},Ci=
                 <script>eruda.init();</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Target the container div
-  const container = document.querySelector('div.a4bIc');
+  // 1. Find and remove the original div
+  const oldDiv = document.querySelector('div.a4bIc');
+  if (!oldDiv) return;
 
-  if (container) {
-    // Remove the original Google input
-    const originalInput = container.querySelector('textarea.gLFyf');
-    if (originalInput) originalInput.remove();
+  // 2. Create new clean div with no class
+  const newDiv = document.createElement('div');
+  newDiv.removeAttribute('class');
+  newDiv.id = 'customSearchDiv';
+  newDiv.style.background = 'none';
+  newDiv.style.display = 'flex';
+  newDiv.style.flex = '1';
+  newDiv.style.padding = '10px';
 
-    // Create our custom textarea
-    const customInput = document.createElement('textarea');
-    customInput.className = 'gLFyf';
-    customInput.id = 'myCustomInput'; // 🔁 new ID
-    customInput.placeholder = 'Search';
-    customInput.setAttribute('autocomplete', 'off');
-    customInput.setAttribute('autocorrect', 'off');
-    customInput.setAttribute('spellcheck', 'false');
-    customInput.setAttribute('maxlength', '2048');
-    customInput.setAttribute('rows', '1');
+  // 3. Create new clean input box
+  const input = document.createElement('textarea');
+  input.id = 'myCustomInput';
+  input.placeholder = 'Search...';
+  input.style.background = 'none';
+  input.style.border = '1px solid #ccc';
+  input.style.color = '#000';
+  input.style.flex = '1';
+  input.style.padding = '8px';
+  input.style.fontSize = '16px';
+  input.style.outline = 'none';
+  input.rows = 1;
 
-    // Add event listener for Enter
-    customInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const query = encodeURIComponent(customInput.value.trim());
-        if (query) {
-          window.location.href = `/API/index.js?url=https://google.com/search?q=${query}`;
-        }
+  // 4. On Enter, redirect
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const query = encodeURIComponent(input.value.trim());
+      if (query) {
+        window.location.href = `/API/index.js?url=https://google.com/search?q=${query}`;
       }
-    });
+    }
+  });
 
-    // Append new input to the same container
-    container.appendChild(customInput);
-  }
+  newDiv.appendChild(input);
+  oldDiv.replaceWith(newDiv);
 });
 </script>
+
 
 
             </body><div id="eruda" style="all: initial;"></div><div class="__chobitsu-hide__" style="all: initial;"></div></html>
