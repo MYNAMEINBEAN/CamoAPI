@@ -98,8 +98,7 @@ export default async function handler(req, res) {
                     }
                 });
             }
-
-            // Re-add Eruda
+            
             data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
                 <script>eruda.init();</script>
@@ -209,7 +208,6 @@ export default async function handler(req, res) {
 
         }
 
-        // FULL percent-encoding replacements
         data = data.replace(/%20/g, ' ')
             .replace(/%21/g, '!')
             .replace(/%22/g, '"')
@@ -306,7 +304,6 @@ export default async function handler(req, res) {
             .replace(/%7D/g, '}')
             .replace(/%7E/g, '~');
 
-        // Fix content="..." JSON
         data = data.replace(/content="([^"]+)"/g, (match, jsonContent) => {
             try {
                 let jsonData = JSON.parse(decodeURIComponent(jsonContent));
