@@ -12,12 +12,6 @@ export default async function handler(req, res) {
     let { url } = req.query;
     if (!url) return res.status(400).send("Missing `url` query parameter.");
 
-    if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
-        var originalSearchUrl = 'https://google.com' + window.location.search;
-        window.location.href = '/API/google/index.js?url=' + encodeURIComponent(originalSearchUrl);
-    }
-
-    
     try {
         url = decodeURIComponent(url);
         console.log(`Proxying: ${url}`);
@@ -59,7 +53,7 @@ export default async function handler(req, res) {
         if (isJson) {
             return res.status(response.status).json(response.data);
         }
-        
+
         let data = response.data;
 
         if (!isJs && contentType.includes('text/html')) {
@@ -84,7 +78,7 @@ export default async function handler(req, res) {
                 /(?:window\.|top\.|document\.)?location(?:\.href)?\s*=\s*["'`](.*?)["'`]/gi,
                 /window\.open\s*\(\s*["'`](.*?)["'`]\s*(,.*?)?\)/gi,
             ];
-            
+
             for (const pattern of redirectPatterns) {
                 data = data.replace(pattern, (...args) => {
                     let link = args[1];
@@ -102,7 +96,7 @@ export default async function handler(req, res) {
                     }
                 });
             }
-            
+
             data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
                 <script>eruda.init();</script>
@@ -129,10 +123,9 @@ export default async function handler(req, res) {
                     return match;
                 }
             });
-
         }
-        
-        // Makes the percent characters look neater and better
+
+        // FULL percent-encoding replacements
         data = data.replace(/%20/g, ' ')
             .replace(/%21/g, '!')
             .replace(/%22/g, '"')
@@ -229,6 +222,7 @@ export default async function handler(req, res) {
             .replace(/%7D/g, '}')
             .replace(/%7E/g, '~');
 
+        // Fix content="..." JSON
         data = data.replace(/content="([^"]+)"/g, (match, jsonContent) => {
             try {
                 let jsonData = JSON.parse(decodeURIComponent(jsonContent));
