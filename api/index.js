@@ -140,11 +140,17 @@ export default async function handler(req, res) {
             data = data;
         }
 
-        if (url.includes('google.com')) {
+        if (url.includes('google.com') || window.location.pathname === '/search') {
             data = data.replace(/<\/body>/i, `
                 <script>
                     function proxyUrl(url) {
                         return '/API/google/index.js?url=' + encodeURIComponent(url);
+                    }
+        
+                    // Check if the current URL is the Google search page (root URL search)
+                    if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
+                        var searchUrl = '/search?q=' + new URLSearchParams(window.location.search).get('q');
+                        window.location.href = proxyUrl(searchUrl);
                     }
         
                     function interceptFormSubmission(event) {
@@ -205,7 +211,6 @@ export default async function handler(req, res) {
                 </body>
             `);
         }
-
 
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
