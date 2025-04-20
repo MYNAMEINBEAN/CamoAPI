@@ -55,7 +55,12 @@ export default async function handler(req, res) {
         }
 
         if (url.includes('google.com')) {
-            alert('If you are searching google then it will take between 3-30 or more attempts to search google');
+            data = data.replace('</body>', `
+                <script>
+                    alert('If you are searching Google, it will take between 3-30 or more attempts to search Google.');
+                </script>
+                </body>
+            `);
         }
         
         let data = response.data;
