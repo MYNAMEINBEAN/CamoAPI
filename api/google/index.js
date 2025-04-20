@@ -124,7 +124,8 @@ export default async function handler(req, res) {
                 }
             });
     
-            data = data.replace('<form class="tsf" action="/search" id="tsf" autocomplete="off" data-submitfalse="q" method="GET" name="f" role="search" style="max-width: 672px;">', '<div class="tsf" id="tsf" autocomplete="off" style="max-width: 672px;">');
+            data = data.replace('<form class="tsf" action="/search" id="tsf" autocomplete="off" data-submitfalse="q" method="GET" name="f" role="search" style="max-width: 672px;">', '<div style="background: none; border: none; width: 670px;">');
+            data = data.replace('</form>', '</div>');
         }
 
         // FULL percent-encoding replacements
