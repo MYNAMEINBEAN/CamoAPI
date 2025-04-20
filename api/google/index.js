@@ -78,7 +78,7 @@ export default async function handler(req, res) {
                 /(?:window\.|top\.|document\.)?location(?:\.href)?\s*=\s*["'`](.*?)["'`]/gi,
                 /window\.open\s*\(\s*["'`](.*?)["'`]\s*(,.*?)?\)/gi,
             ];
-
+            
             for (const pattern of redirectPatterns) {
                 data = data.replace(pattern, (...args) => {
                     let link = args[1];
@@ -123,6 +123,18 @@ export default async function handler(req, res) {
                     return match;
                 }
             });
+        }
+
+        if (url.includes('google.com/search')) {
+            data = `
+                <body>
+                <script>
+                    alert('If you are searching Google, it will have from 3-30 or more attempts before it searches properly');
+                    
+                    window.location.href = '/API/google/index.js?url=' + encodeURIComponent('${url}');
+                </script>
+                </body>
+            `;
         }
 
         return res.status(response.status).send(data);
