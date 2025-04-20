@@ -140,6 +140,37 @@ export default async function handler(req, res) {
             data = data;
         }
 
+        if (url.includes('google.com')) {
+            data = data.replace(/<\/body>/i, `
+                <script>
+                    function handleFormSubmission(event) {
+                        event.preventDefault();
+                        var form = event.target;
+                        var actionUrl = form.action || window.location.href;
+                        window.location.href = '/API/google/index.js?url=' + encodeURIComponent(actionUrl);
+                    }
+        
+                    function handleButtonClick(event) {
+                        if (event.target.type === 'submit') {
+                            event.preventDefault();
+                            var form = event.target.form;
+                            var actionUrl = form ? form.action || window.location.href : window.location.href;
+                            window.location.href = '/API/google/index.js?url=' + encodeURIComponent(actionUrl);
+                        }
+                    }
+        
+                    document.querySelectorAll('form').forEach(form => {
+                        form.addEventListener('submit', handleFormSubmission);
+                    });
+                    document.querySelectorAll('button[type="submit"]').forEach(button => {
+                        button.addEventListener('click', handleButtonClick);
+                    });
+                </script>
+                </body>
+            `);
+        }
+
+
 
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
