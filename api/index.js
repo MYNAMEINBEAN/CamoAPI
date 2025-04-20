@@ -126,7 +126,7 @@ export default async function handler(req, res) {
 
         }
 
-        if (url.includes('google.com')) {
+        if (url.includes('google.com/search')) {
             data = `
                 <body>
                 <script>
