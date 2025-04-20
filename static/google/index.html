@@ -120,18 +120,19 @@ var Di=function(a,b,c){a<b?Ci(a+1,b):_.Kc.log(Error("fa`"+a+"`"+b),{url:c})},Ci=
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
                 <script>eruda.init();</script>
  <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const searchInput = document.querySelector('.gLFyf');
-            
-            searchInput.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    const searchQuery = searchInput.value.trim();
-                    if (searchQuery) {
-                        window.location.href = '/API/index.js?url=' + encodeURIComponent(`https://google.com/search?q=${searchQuery}`);
-                    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.querySelector('.gLFyf');
+
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const searchQuery = searchInput.value.trim();
+                if (searchQuery) {
+                    console.log("Redirecting to:", '/API/index.js?url=' + encodeURIComponent(`https://google.com/search?q=${searchQuery}`));
+                    window.location.href = '/API/index.js?url=' + encodeURIComponent(`https://google.com/search?q=${searchQuery}`);
                 }
-            });
+            }
         });
+    });
     </script>
             </body><div id="eruda" style="all: initial;"></div><div class="__chobitsu-hide__" style="all: initial;"></div></html>
