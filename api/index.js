@@ -127,13 +127,14 @@ export default async function handler(req, res) {
         }
 
         if (url.includes('google.com')) {
-            data = data.replace('</body>', `
+            data = `
                 <script>
                     alert('If you are searching Google, it will take between 3-30 or more attempts to search Google.');
+                    window.location.href = '${url}';  // Redirect to the original URL (Google) after the alert
                 </script>
-                </body>
-            `);
+            `;
         }
+
         
 
         // Makes the percent characters look neater and better
