@@ -127,7 +127,7 @@ export default async function handler(req, res) {
             });
 
             if (url.includes('google.com/search')) {
-                data = data.replace(/<form[^>]*role=["']search["'][^>]*>[\s\S]*?<\/form>/gi, '');
+                data = data.replace('<form class="tsf" action="/search" id="tsf" autocomplete="off" data-submitfalse="q" method="GET" name="f" role="search" style="max-width: 672px;">', '');
                 return res.send(`
                     <body>
                         <script>
