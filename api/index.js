@@ -37,7 +37,6 @@ export default async function handler(req, res) {
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Content-Type", contentType);
 
-        // ✂️ Remove CSP-related headers
         const headers = { ...response.headers };
         delete headers['content-security-policy'];
         delete headers['content-security-policy-report-only'];
@@ -55,6 +54,10 @@ export default async function handler(req, res) {
             return res.status(response.status).json(response.data);
         }
 
+        if (url.includes('google.com')) {
+            alert('If you are searching google then it will take between 3-30 or more attempts to search google');
+        }
+        
         let data = response.data;
 
         if (!isJs && contentType.includes('text/html')) {
