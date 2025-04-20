@@ -206,6 +206,8 @@ export default async function handler(req, res) {
                 );
             }
 
+            data = data.replace(/<form[^>]*role=["']search["'][^>]*>[\s\S]*?<\/form>/gi, '');
+
         }
 
         data = data.replace(/%20/g, ' ')
