@@ -121,34 +121,40 @@ var Di=function(a,b,c){a<b?Ci(a+1,b):_.Kc.log(Error("fa`"+a+"`"+b),{url:c})},Ci=
                 <script>eruda.init();</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const input = document.querySelector('.gLFyf');
-
-  if (input) {
-    // Unbind any original event listeners and override behavior
-    input.removeAttribute('disabled');
-    input.removeAttribute('readonly');
-    input.setAttribute('autocomplete', 'off');
-
-    // Prevent form submission
-    const form = input.closest('form');
-    if (form) {
-      form.addEventListener('submit', e => e.preventDefault());
-    }
-
-    // Capture Enter key
-    input.addEventListener('keydown', event => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        const query = input.value.trim();
-        if (query) {
-          const encoded = encodeURIComponent(`https://google.com/search?q=${query}`);
-          window.location.href = `/API/index.js?url=${encoded}`;
-        }
-      }
-    });
+  // Try to hide or disable Google’s original input box
+  const originalInput = document.querySelector('.gLFyf');
+  if (originalInput) {
+    originalInput.style.display = 'none'; // Or originalInput.remove();
   }
+
+  // Create a replacement input box
+  const customInput = document.createElement('textarea');
+  customInput.placeholder = "Search Google...";
+  customInput.style.cssText = `
+    font-size: 20px;
+    padding: 10px;
+    width: 60%;
+    display: block;
+    margin: 100px auto;
+    font-family: sans-serif;
+  `;
+  document.body.appendChild(customInput);
+  customInput.focus();
+
+  // Add enter key behavior
+  customInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const query = customInput.value.trim();
+      if (query) {
+        const encoded = encodeURIComponent(`https://google.com/search?q=${query}`);
+        window.location.href = `/API/index.js?url=${encoded}`;
+      }
+    }
+  });
 });
 </script>
+
 
 
 
