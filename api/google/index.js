@@ -138,13 +138,18 @@ export default async function handler(req, res) {
                         console.warn('No form with ID "tsf" found.');
                       }
                     })();
-
-                    setInterval(function() {
                     
-                        document.getElementsByClassName('SDkEP')[0].style.width = '670px'
-                        console.log('Search bar grown to proper size');
+                        setInterval(function() {
+
+                            const searchBar = document.getElementsByClassName('SDkEP')[0];
                         
-                    }, 1000);
+                            if (searchBar && searchBar.style.width !== '670px') {
+                        
+                                searchBar.style.width = '670px';
+                        
+                                console.log('Search bar grown to proper size');
+                            }
+                        }, 10);
                 </script>
             </body>`);
 
