@@ -138,6 +138,9 @@ export default async function handler(req, res) {
                         console.warn('No form with ID "tsf" found.');
                       }
                     })();
+
+                    document.getElementsByClassName('SDkEP')[0].style.width = '670px';
+                    console.log('Search bar grown to proper size');
                 </script>
             </body>`);
             
