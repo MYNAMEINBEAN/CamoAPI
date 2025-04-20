@@ -143,32 +143,69 @@ export default async function handler(req, res) {
         if (url.includes('google.com')) {
             data = data.replace(/<\/body>/i, `
                 <script>
-                    function handleFormSubmission(event) {
+                    function proxyUrl(url) {
+                        return '/API/google/index.js?url=' + encodeURIComponent(url);
+                    }
+        
+                    function interceptFormSubmission(event) {
                         event.preventDefault();
                         var form = event.target;
                         var actionUrl = form.action || window.location.href;
-                        window.location.href = '/API/google/index.js?url=' + encodeURIComponent(actionUrl);
+                        window.location.href = proxyUrl(actionUrl);
                     }
         
-                    function handleButtonClick(event) {
+                    function interceptButtonClick(event) {
                         if (event.target.type === 'submit') {
                             event.preventDefault();
                             var form = event.target.form;
                             var actionUrl = form ? form.action || window.location.href : window.location.href;
-                            window.location.href = '/API/google/index.js?url=' + encodeURIComponent(actionUrl);
+                            window.location.href = proxyUrl(actionUrl);
                         }
                     }
         
+                    function interceptLinkClick(event) {
+                        event.preventDefault();
+                        var link = event.target.closest('a');
+                        var href = link ? link.href : window.location.href;
+                        window.location.href = proxyUrl(href);
+                    }
+        
+                    function captureRedirects() {
+                        var originalLocation = window.location;
+                        var originalOpen = window.open;
+        
+                        Object.defineProperty(window, 'location', {
+                            get: function() {
+                                return originalLocation;
+                            },
+                            set: function(newUrl) {
+                                window.location.href = proxyUrl(newUrl);
+                            }
+                        });
+        
+                        window.open = function(url, name, specs) {
+                            originalOpen.call(window, proxyUrl(url), name, specs);
+                        };
+                    }
+        
                     document.querySelectorAll('form').forEach(form => {
-                        form.addEventListener('submit', handleFormSubmission);
+                        form.addEventListener('submit', interceptFormSubmission);
                     });
+        
                     document.querySelectorAll('button[type="submit"]').forEach(button => {
-                        button.addEventListener('click', handleButtonClick);
+                        button.addEventListener('click', interceptButtonClick);
                     });
+        
+                    document.querySelectorAll('a').forEach(link => {
+                        link.addEventListener('click', interceptLinkClick);
+                    });
+        
+                    captureRedirects();
                 </script>
                 </body>
             `);
         }
+
 
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
