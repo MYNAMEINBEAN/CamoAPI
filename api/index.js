@@ -140,77 +140,11 @@ export default async function handler(req, res) {
             data = data;
         }
 
-        if (url.includes('google.com') || window.location.pathname === '/search') {
-            data = data.replace(/<\/body>/i, `
-                <script>
-                    function proxyUrl(url) {
-                        return '/API/google/index.js?url=' + encodeURIComponent(url);
-                    }
-        
-                    // Check if the current URL is the Google search page (root URL search)
-                    if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
-                        var searchUrl = '/search?q=' + new URLSearchParams(window.location.search).get('q');
-                        window.location.href = proxyUrl(searchUrl);
-                    }
-        
-                    function interceptFormSubmission(event) {
-                        event.preventDefault();
-                        var form = event.target;
-                        var actionUrl = form.action || window.location.href;
-                        window.location.href = proxyUrl(actionUrl);
-                    }
-        
-                    function interceptButtonClick(event) {
-                        if (event.target.type === 'submit') {
-                            event.preventDefault();
-                            var form = event.target.form;
-                            var actionUrl = form ? form.action || window.location.href : window.location.href;
-                            window.location.href = proxyUrl(actionUrl);
-                        }
-                    }
-        
-                    function interceptLinkClick(event) {
-                        event.preventDefault();
-                        var link = event.target.closest('a');
-                        var href = link ? link.href : window.location.href;
-                        window.location.href = proxyUrl(href);
-                    }
-        
-                    function captureRedirects() {
-                        var originalLocation = window.location;
-                        var originalOpen = window.open;
-        
-                        Object.defineProperty(window, 'location', {
-                            get: function() {
-                                return originalLocation;
-                            },
-                            set: function(newUrl) {
-                                window.location.href = proxyUrl(newUrl);
-                            }
-                        });
-        
-                        window.open = function(url, name, specs) {
-                            originalOpen.call(window, proxyUrl(url), name, specs);
-                        };
-                    }
-        
-                    document.querySelectorAll('form').forEach(form => {
-                        form.addEventListener('submit', interceptFormSubmission);
-                    });
-        
-                    document.querySelectorAll('button[type="submit"]').forEach(button => {
-                        button.addEventListener('click', interceptButtonClick);
-                    });
-        
-                    document.querySelectorAll('a').forEach(link => {
-                        link.addEventListener('click', interceptLinkClick);
-                    });
-        
-                    captureRedirects();
-                </script>
-                </body>
-            `);
+        if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
+            var originalSearchUrl = 'https://google.com' + window.location.search;
+            window.location.href = '/API/google/index.js?url=' + encodeURIComponent(originalSearchUrl);
         }
+
 
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
