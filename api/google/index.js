@@ -10,11 +10,17 @@ export default async function handler(req, res) {
     }
 
     let { url } = req.query;
-    if (!url) return res.status(400).send("Missing url query parameter.");
+    if (!url) return res.status(400).send("Missing `url` query parameter.");
 
+    if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
+        var originalSearchUrl = 'https://google.com' + window.location.search;
+        window.location.href = '/API/google/index.js?url=' + encodeURIComponent(originalSearchUrl);
+    }
+
+    
     try {
         url = decodeURIComponent(url);
-        console.log(Proxying: ${url});
+        console.log(`Proxying: ${url}`);
 
         const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -65,8 +71,8 @@ export default async function handler(req, res) {
                         return match;
                     }
                     const absoluteUrl = new URL(link, baseUrl).toString();
-                    const proxied = /API/index.js?url=${encodeURIComponent(absoluteUrl)};
-                    return ${attr}="${proxied}";
+                    const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
+                    return `${attr}="${proxied}"`;
                 } catch (e) {
                     return match;
                 }
@@ -75,8 +81,8 @@ export default async function handler(req, res) {
             data = data.replace('loading="lazy"', 'loading="eager"');
 
             const redirectPatterns = [
-                /(?:window\.|top\.|document\.)?location(?:\.href)?\s*=\s*["'](.*?)["']/gi,
-                /window\.open\s*\(\s*["'](.*?)["']\s*(,.*?)?\)/gi,
+                /(?:window\.|top\.|document\.)?location(?:\.href)?\s*=\s*["'`](.*?)["'`]/gi,
+                /window\.open\s*\(\s*["'`](.*?)["'`]\s*(,.*?)?\)/gi,
             ];
             
             for (const pattern of redirectPatterns) {
@@ -85,11 +91,11 @@ export default async function handler(req, res) {
                     let extra = args[2] || '';
                     try {
                         const target = new URL(link || '.', baseUrl).toString();
-                        const proxied = /API/index.js?url=${encodeURIComponent(target)};
+                        const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
                         if (pattern.source.startsWith("window.open")) {
-                            return window.open('${proxied}'${extra});
+                            return `window.open('${proxied}'${extra})`;
                         } else {
-                            return window.location = '${proxied}';
+                            return `window.location = '${proxied}'`;
                         }
                     } catch (e) {
                         return args[0];
@@ -97,27 +103,27 @@ export default async function handler(req, res) {
                 });
             }
             
-            data = data.replace(/<\/body>/i, 
+            data = data.replace(/<\/body>/i, `
                 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
                 <script>eruda.init();</script>
-            </body>);
+            </body>`);
 
             data = data.replace(/(--background-image\s*:\s*url\(["']?)([^"')]+)(["']?\))/g, (match, prefix, url, suffix) => {
                 if (url.startsWith('http')) return match;
-                const proxiedUrl = /API/index.js?url=${encodeURIComponent(url)};
-                return ${prefix}${proxiedUrl}${suffix};
+                const proxiedUrl = `/API/index.js?url=${encodeURIComponent(url)}`;
+                return `${prefix}${proxiedUrl}${suffix}`;
             });
 
             data = data.replace(/url\(["']?(?!data:|http|\/\/)([^"')]+)["']?\)/gi, (match, relativePath) => {
                 const absolute = new URL(relativePath, baseUrl).toString();
-                const proxied = /API/index.js?url=${encodeURIComponent(absolute)};
-                return url('${proxied}');
+                const proxied = `/API/index.js?url=${encodeURIComponent(absolute)}`;
+                return `url('${proxied}')`;
             });
 
             data = data.replace(/<iframe\s+[^>]*src=["'](.*?)["'][^>]*>/gi, (match, link) => {
                 try {
                     const target = new URL(link || '.', baseUrl).toString();
-                    const proxied = /API/index.js?url=${encodeURIComponent(target)};
+                    const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
                     return match.replace(link, proxied);
                 } catch (e) {
                     return match;
@@ -125,27 +131,7 @@ export default async function handler(req, res) {
             });
 
         }
-
-        if (url.includes('google.com/search')) {
-            data = 
-                <body>
-                <script>
-                    alert('If you are searching Google, it will have from 3-30 or more attempts before it searches properly');
-                    
-                    window.location.href = '/API/google/index.js?url=' + encodeURIComponent('${url}');
-                </script>
-                </body>
-            ;
-        } else if (url.includes('.google.com')) {
-            data = data;
-        }
-
-        if (window.location.pathname === '/search' && window.location.search.includes('q=')) {
-            var originalSearchUrl = 'https://google.com' + window.location.search;
-            window.location.href = '/API/google/index.js?url=' + encodeURIComponent(originalSearchUrl);
-        }
-
-
+        
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
             .replace(/%21/g, '!')
@@ -211,7 +197,7 @@ export default async function handler(req, res) {
             .replace(/%5D/g, ']')
             .replace(/%5E/g, '^')
             .replace(/%5F/g, '_')
-            .replace(/%60/g, '')
+            .replace(/%60/g, '`')
             .replace(/%61/g, 'a')
             .replace(/%62/g, 'b')
             .replace(/%63/g, 'c')
@@ -274,7 +260,7 @@ export default async function handler(req, res) {
                     }
                 }
 
-                return content="${encodeURIComponent(JSON.stringify(jsonData))}";
+                return `content="${encodeURIComponent(JSON.stringify(jsonData))}"`;
             } catch (e) {
                 console.error("Error processing content:", e);
                 return match;
@@ -284,7 +270,7 @@ export default async function handler(req, res) {
         return res.status(response.status).send(data);
 
     } catch (err) {
-        console.error(Proxy Error: ${err.message});
-        return res.status(500).send(<h1>Proxy Error</h1><p>${err.message}</p>);
+        console.error(`Proxy Error: ${err.message}`);
+        return res.status(500).send(`<h1>Proxy Error</h1><p>${err.message}</p>`);
     }
 }
