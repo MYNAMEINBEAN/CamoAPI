@@ -30,7 +30,7 @@ html, body {
     align-items: center;
     flex-direction: column;
 }
-.content .search .google, .images {
+.content .search .box {
     border: 1px solid white;
     padding: 80px;
     border-radius: 10px;
