@@ -124,7 +124,22 @@ export default async function handler(req, res) {
                 }
             });
     
-            
+            data = data.replace(/<\/body>/i, `
+                <script>
+                    (() => {
+                      const form = document.getElementById('tsf');
+                      if (form) {
+                        const parent = form.parentNode;
+                        const children = Array.from(form.childNodes);
+                        children.forEach(child => parent.insertBefore(child, form));
+                        parent.removeChild(form);
+                        console.log('Form unwrapped successfully.');
+                      } else {
+                        console.warn('No form with ID "tsf" found.');
+                      }
+                    })();
+                </script>
+            </body>`);
             
         }
 
