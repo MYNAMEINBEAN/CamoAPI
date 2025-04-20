@@ -1,5 +1,7 @@
 import axios from 'axios';
 import https from 'https';
+import fs from 'fs';
+import path from 'path';
 
 export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
@@ -134,6 +136,15 @@ export default async function handler(req, res) {
                         </script>
                     </body>
                 `);
+            } else if (url === 'https://google.com') {
+                const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
+                data = fs.readFileSync(filePath, 'utf8');
+            } else if (url === 'https://google.com/') {
+                const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
+                data = fs.readFileSync(filePath, 'utf8');
+            } else if (url === 'google.com') {
+                const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
+                data = fs.readFileSync(filePath, 'utf8');
             }
 
         }
