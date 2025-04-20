@@ -170,8 +170,6 @@ export default async function handler(req, res) {
             `);
         }
 
-
-
         // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
             .replace(/%21/g, '!')
