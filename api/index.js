@@ -53,15 +53,6 @@ export default async function handler(req, res) {
         if (isJson) {
             return res.status(response.status).json(response.data);
         }
-
-        if (url.includes('google.com')) {
-            data = data.replace('</body>', `
-                <script>
-                    alert('If you are searching Google, it will take between 3-30 or more attempts to search Google.');
-                </script>
-                </body>
-            `);
-        }
         
         let data = response.data;
 
@@ -135,7 +126,17 @@ export default async function handler(req, res) {
 
         }
 
-        // Replace percent-encoded characters
+        if (url.includes('google.com')) {
+            data = data.replace('</body>', `
+                <script>
+                    alert('If you are searching Google, it will take between 3-30 or more attempts to search Google.');
+                </script>
+                </body>
+            `);
+        }
+        
+
+        // Makes the percent characters look neater and better
         data = data.replace(/%20/g, ' ')
             .replace(/%21/g, '!')
             .replace(/%22/g, '"')
