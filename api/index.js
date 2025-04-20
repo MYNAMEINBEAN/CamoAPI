@@ -136,8 +136,7 @@ export default async function handler(req, res) {
                         </script>
                     </body>
                 `);
-            }
-             else if (url === 'https://google.com') {
+            } else if (url === 'https://google.com') {
                 const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
                 data = fs.readFileSync(filePath, 'utf8');
                 data = data.replace(
@@ -207,8 +206,6 @@ export default async function handler(req, res) {
                     </body>`
                 );
             }
-
-            data = data.replace(/<form[^>]*role=["']search["'][^>]*>[\s\S]*?<\/form>/gi, '');
 
         }
 
