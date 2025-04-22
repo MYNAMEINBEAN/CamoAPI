@@ -4,15 +4,13 @@ module.exports = async (req, res) => {
   try {
     const { url } = req.query;
 
-    // Ensure URL is provided
     if (!url) {
       return res.status(400).json({ error: 'No URL provided' });
     }
 
     console.log(`Fetching content from: ${url}`);
 
-    // Make the HTTP request to the URL with headers adjusted
-    const response = await axios.get(url, {
+    const response = await axios.get(decodeURIComponent(url), {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.133 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -20,28 +18,27 @@ module.exports = async (req, res) => {
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
       },
-      maxRedirects: 10,  // Allow up to 10 redirects
-      responseType: 'arraybuffer', // Handle the response as binary
+      maxRedirects: 10,
+      responseType: 'arraybuffer',
     });
 
-    console.log(`Response status: ${response.status}`);
+    const contentType = response.headers['content-type'] || 'text/html';
+    res.setHeader('Content-Type', contentType);
 
-    // Convert the binary data to UTF-8 string
-    const data = Buffer.from(response.data, 'binary').toString('utf-8');
+    // Send raw binary data if not text
+    if (!contentType.includes('text/html')) {
+      return res.send(Buffer.from(response.data));
+    }
 
-    // Set content type as HTML
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(data); // Send the decoded HTML content
+    // Convert to UTF-8 and send HTML
+    const html = Buffer.from(response.data, 'binary').toString('utf-8');
+    res.send(html);
 
   } catch (error) {
-    // Log the error to identify what went wrong
     console.error('Error fetching content:', error.response ? error.response.status : error.message);
-    
-    // If there's an error in the response, we can provide more info
     if (error.response) {
       return res.status(error.response.status).json({ error: `Failed to fetch content. Status: ${error.response.status}` });
     }
-
     res.status(500).json({ error: 'Failed to fetch content.' });
   }
 };
