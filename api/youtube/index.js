@@ -1,38 +1,23 @@
-import chrome from "chrome-aws-lambda";
-import puppeteer from "puppeteer-core";
+const axios = require('axios');
 
-export default async function handler(req, res) {
-  const targetUrl = req.query.url;
+module.exports = async (req, res) => {
+  // Get the URL parameter from the query string
+  const { url } = req.query;
 
-  if (!targetUrl) {
-    return res.status(400).json({ error: "Missing 'url' parameter" });
+  if (!url) {
+    return res.status(400).json({ error: "Missing URL parameter" });
   }
-
-  let browser = null;
 
   try {
-    browser = await puppeteer.launch({
-      args: chrome.args,
-      executablePath: await chrome.executablePath || "/usr/bin/chromium-browser",
-      headless: chrome.headless,
+    // Fetch the content from the provided URL
+    const response = await axios.get(url);
+
+    // Return the content back to the user
+    res.status(200).json({
+      data: response.data
     });
-
-    const page = await browser.newPage();
-    await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
-
-    const title = await page.title();
-
-    res.status(200).json({ title });
   } catch (error) {
-    // Log the error on the server side for debugging
-    console.error("Error fetching content:", error.message || error);
-
-    // Send a response with a more descriptive error message
-    res.status(500).json({
-      error: "Failed to fetch content from the provided URL.",
-      details: error.message || String(error)
-    });
-  } finally {
-    if (browser) await browser.close();
+    console.error("Error fetching content:", error);
+    res.status(500).json({ error: "Failed to fetch content." });
   }
-}
+};
