@@ -1,7 +1,5 @@
 import axios from 'axios';
 import https from 'https';
-import fs from 'fs';
-import path from 'path';
 
 export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
@@ -20,14 +18,9 @@ export default async function handler(req, res) {
 
         const agent = new https.Agent({ rejectUnauthorized: false });
 
-        const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
-        const isBinary = /\.(woff2?|ttf|eot|otf|ico|mp4|webm)$/i.test(url); // Added video formats
-        const isJson = /\.json$/i.test(url);
-        const isJs = /\.js$/i.test(url);
-
         const response = await axios.get(url, {
             httpsAgent: agent,
-            responseType: isBinary ? 'arraybuffer' : 'text', // Adjusted to handle binary data
+            responseType: 'arraybuffer', // Always get arraybuffer
             timeout: 30000,
             headers: {
                 'User-Agent': req.headers['user-agent'] || '',
@@ -35,12 +28,13 @@ export default async function handler(req, res) {
             },
         });
 
-        console.log(`Response received from ${url}, status: ${response.status}`);
-        
         const contentType = response.headers['content-type'] || 'application/octet-stream';
+        const buffer = Buffer.from(response.data);
+
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Content-Type", contentType);
 
+        // Strip security headers
         const headers = { ...response.headers };
         delete headers['content-security-policy'];
         delete headers['content-security-policy-report-only'];
@@ -50,57 +44,42 @@ export default async function handler(req, res) {
             res.setHeader(key, value);
         }
 
-        if (isBinary) {
-            // Handle binary data (like images, videos, fonts, etc.)
-            return res.status(response.status).send(Buffer.from(response.data));
-        }
-
-        if (isJson) {
-            return res.status(response.status).json(response.data);
-        }
-
-        let data = response.data;
-
-        // Handling YouTube-specific modifications (e.g., replacing video URLs)
-        if (!isJs && contentType.includes('text/html')) {
+        // If it's HTML, try to modify URLs inside
+        if (contentType.includes('text/html')) {
+            let data = buffer.toString('utf8');
             const baseUrl = new URL(url);
 
-            // Modify src or href attributes for YouTube-specific content (video embedding)
             data = data.replace(/(src|href|srcset|poster)=["']([^"']+)["']/gi, (match, attr, link) => {
                 try {
-                    // Ignore data URLs, mailto, and javascript
                     if (link.startsWith('data:') || link.startsWith('mailto:') || link.startsWith('javascript:')) {
                         return match;
                     }
-                    // For YouTube video links, modify the URLs as needed
-                    if (link.includes('youtube.com')) {
-                        const absoluteUrl = new URL(link, baseUrl).toString();
-                        const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
-                        console.log(`Proxied YouTube URL: ${proxied}`);
-                        return `${attr}="${proxied}"`;
-                    }
                     const absoluteUrl = new URL(link, baseUrl).toString();
                     const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
-                    console.log(`Proxied URL: ${proxied}`);
                     return `${attr}="${proxied}"`;
-                } catch (e) {
+                } catch {
                     return match;
                 }
             });
 
             data = data.replace('loading="lazy"', 'loading="eager"');
 
-            // Handle YouTube video embeds (e.g., iframe)
-            data = data.replace(/<iframe\s+[^>]*src=["'](https:\/\/www\.youtube\.com\/embed\/[^"']+)["'][^>]*>/gi, (match, link) => {
-                const target = new URL(link, baseUrl).toString();
-                const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
-                console.log(`Proxied iframe URL: ${proxied}`);
-                return match.replace(link, proxied);
+            // Proxy iframe embeds
+            data = data.replace(/<iframe\s+[^>]*src=["']([^"']+)["']/gi, (match, link) => {
+                try {
+                    const absoluteUrl = new URL(link, baseUrl).toString();
+                    const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
+                    return match.replace(link, proxied);
+                } catch {
+                    return match;
+                }
             });
+
+            return res.status(response.status).send(data);
         }
 
-        // Return the modified HTML data (if it's an HTML response)
-        return res.status(response.status).send(data);
+        // If not HTML, send raw buffer
+        return res.status(response.status).send(buffer);
 
     } catch (err) {
         console.error(`Proxy Error: ${err.message}`);
