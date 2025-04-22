@@ -2,54 +2,30 @@ const axios = require('axios');
 
 module.exports = async (req, res) => {
   try {
-    const { url } = req.query;  // Get the 'url' query parameter
-    
+    const { url } = req.query;
     if (!url) {
       return res.status(400).json({ error: 'URL parameter is required' });
     }
 
-    // Set up axios to not follow redirects (maxRedirects: 0)
-    const axiosConfig = {
-      maxRedirects: 0,  // Prevent redirects to base URL
-      responseType: 'arraybuffer',  // Handle binary data (like images)
+    // Set custom headers to mimic a real browser
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'TE': 'Trailers',
     };
 
-    // Fetch the content from the provided URL
-    const response = await axios.get(url, axiosConfig);
+    // Make the request with axios and the custom headers
+    const response = await axios.get(url, { headers, responseType: 'text' });
 
-    // Set the appropriate content type from the response headers
-    const contentType = response.headers['content-type'];
-    res.setHeader('Content-Type', contentType);
-
-    // If the content is HTML, inject Eruda (JavaScript Debugger) into it
-    if (contentType.includes('html')) {
-      let htmlContent = response.data.toString();
-
-      // Add the Eruda script just before the closing </body> tag
-      htmlContent = htmlContent.replace(
-        '</body>',
-        `<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script></body>`
-      );
-
-      // Send back the modified HTML
-      return res.send(htmlContent);
-    }
-
-    // If the content is not HTML (e.g., images, videos, etc.), return the raw content
-    res.send(Buffer.from(response.data));
+    // Send the response back to the client
+    res.setHeader('Content-Type', 'text/html');
+    res.send(response.data);
   } catch (error) {
-    console.error('Error fetching content:', error.message || error);
-
-    // Check if the error was a redirect (e.g., 301 or 302) and handle it
-    if (error.response && (error.response.status === 301 || error.response.status === 302)) {
-      const redirectUrl = error.response.headers.location;
-      if (redirectUrl && !redirectUrl.includes('districtlearning.org')) {
-        // Redirect to the new location (if it's not the base URL)
-        return res.redirect(redirectUrl);
-      }
-    }
-
-    // If there are issues with fetching the content or it's not HTML, handle the error
+    console.error('Error fetching content:', error);
     res.status(500).json({ error: 'Failed to fetch content' });
   }
 };
