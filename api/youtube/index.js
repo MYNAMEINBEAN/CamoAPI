@@ -1,38 +1,31 @@
-import chrome from 'chrome-aws-lambda';
-import puppeteer from 'puppeteer-core';
+import chrome from "chrome-aws-lambda";
+import puppeteer from "puppeteer-core";
 
 export default async function handler(req, res) {
-  const url = req.query.url;
-
-  if (!url) {
-    return res.status(400).json({ error: 'Missing URL' });
+  const targetUrl = req.query.url;
+  if (!targetUrl) {
+    return res.status(400).json({ error: "Missing 'url' parameter" });
   }
 
   let browser = null;
 
   try {
-    const executablePath = await chrome.executablePath || '/usr/bin/chromium-browser';
-
     browser = await puppeteer.launch({
       args: chrome.args,
-      executablePath,
+      executablePath: await chrome.executablePath,
       headless: chrome.headless,
-      ignoreHTTPSErrors: true
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
 
-    const content = await page.content();
+    const title = await page.title();
 
-    res.setHeader('Content-Type', 'text/html');
-    res.status(200).send(content);
-  } catch (err) {
-    console.error('Error fetching content:', err.message);
-    res.status(500).json({ error: 'Error fetching content', details: err.message });
+    res.status(200).json({ title });
+  } catch (error) {
+    console.error("Error fetching content:", error);
+    res.status(500).json({ error: "Failed to fetch content." });
   } finally {
-    if (browser !== null) {
-      await browser.close();
-    }
+    if (browser) await browser.close();
   }
 }
