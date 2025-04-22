@@ -35,6 +35,8 @@ export default async function handler(req, res) {
             },
         });
 
+        console.log(`Response received from ${url}, status: ${response.status}`);
+        
         const contentType = response.headers['content-type'] || 'application/octet-stream';
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Content-Type", contentType);
@@ -73,10 +75,12 @@ export default async function handler(req, res) {
                     if (link.includes('youtube.com')) {
                         const absoluteUrl = new URL(link, baseUrl).toString();
                         const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
+                        console.log(`Proxied YouTube URL: ${proxied}`);
                         return `${attr}="${proxied}"`;
                     }
                     const absoluteUrl = new URL(link, baseUrl).toString();
                     const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
+                    console.log(`Proxied URL: ${proxied}`);
                     return `${attr}="${proxied}"`;
                 } catch (e) {
                     return match;
@@ -89,6 +93,7 @@ export default async function handler(req, res) {
             data = data.replace(/<iframe\s+[^>]*src=["'](https:\/\/www\.youtube\.com\/embed\/[^"']+)["'][^>]*>/gi, (match, link) => {
                 const target = new URL(link, baseUrl).toString();
                 const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
+                console.log(`Proxied iframe URL: ${proxied}`);
                 return match.replace(link, proxied);
             });
         }
