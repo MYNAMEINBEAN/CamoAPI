@@ -1,23 +1,39 @@
-const axios = require('axios');
+import puppeteer from 'puppeteer-core';
+import chromium from 'chrome-aws-lambda';
 
-module.exports = async (req, res) => {
-  // Get the URL parameter from the query string
+export default async function handler(req, res) {
   const { url } = req.query;
 
   if (!url) {
-    return res.status(400).json({ error: "Missing URL parameter" });
+    res.status(400).json({ error: 'URL is required' });
+    return;
   }
 
   try {
-    // Fetch the content from the provided URL
-    const response = await axios.get(url);
-
-    // Return the content back to the user
-    res.status(200).json({
-      data: response.data
+    // Launch Puppeteer with Chromium from chrome-aws-lambda
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
     });
+
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+
+    // Get the HTML content of the page
+    const html = await page.content();
+
+    // Close the browser
+    await browser.close();
+
+    // Set the correct content-type for HTML response
+    res.setHeader('Content-Type', 'text/html');
+
+    // Send the HTML content as response
+    res.status(200).send(html);
   } catch (error) {
-    console.error("Error fetching content:", error);
-    res.status(500).json({ error: "Failed to fetch content." });
+    console.error('Error fetching content:', error);
+    res.status(500).json({ error: 'Failed to fetch content.' });
   }
-};
+}
