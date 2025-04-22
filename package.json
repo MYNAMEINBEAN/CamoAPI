@@ -7,6 +7,7 @@
     "start": "vercel start"
   },
   "dependencies": {
-    "axios": "^0.21.1"
+    "axios": "^1.0.0",
+    "puppeteer": "^19.0.0"
   }
 }
