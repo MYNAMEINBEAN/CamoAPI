@@ -1,39 +1,40 @@
-import puppeteer from 'puppeteer-core';
-import chromium from 'chrome-aws-lambda';
+const puppeteer = require('puppeteer-core');
+const chrome = require('chrome-aws-lambda');
+const axios = require('axios');
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   const { url } = req.query;
 
   if (!url) {
-    res.status(400).json({ error: 'URL is required' });
+    res.status(400).json({ error: 'No URL provided' });
     return;
   }
 
   try {
-    // Launch Puppeteer with Chromium from chrome-aws-lambda
+    // Launch the Puppeteer browser with the compatible chromium version from chrome-aws-lambda
     const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
+      args: chrome.args,
+      executablePath: await chrome.executablePath,
+      headless: true,
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, {
+      waitUntil: 'domcontentloaded', // You can also use 'load' or 'networkidle0'
+    });
 
-    // Get the HTML content of the page
-    const html = await page.content();
+    // Optionally, you can take a screenshot, scrape content, or extract specific data
+    // const screenshot = await page.screenshot();
 
-    // Close the browser
+    // Get the rendered HTML content
+    const htmlContent = await page.content(); 
+
     await browser.close();
 
-    // Set the correct content-type for HTML response
-    res.setHeader('Content-Type', 'text/html');
-
-    // Send the HTML content as response
-    res.status(200).send(html);
+    // Return the rendered HTML content as the response
+    res.status(200).send(htmlContent);
   } catch (error) {
-    console.error('Error fetching content:', error);
-    res.status(500).json({ error: 'Failed to fetch content.' });
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch content' });
   }
-}
+};
