@@ -13,12 +13,12 @@ export default async function handler(req, res) {
     if (!url) return res.status(400).send("Missing `url` query parameter.");
 
     try {
-        // Initialize puppeteer with chrome-aws-lambda
         const browser = await puppeteer.launch({
             args: chrome.args,
             defaultViewport: chrome.defaultViewport,
             executablePath: await chrome.executablePath,
             headless: true,
+            ignoreHTTPSErrors: true,
         });
 
         const page = await browser.newPage();
@@ -35,7 +35,6 @@ export default async function handler(req, res) {
         // Close browser
         await browser.close();
 
-        // Send content as the response
         return res.status(200).send(content);
 
     } catch (err) {
