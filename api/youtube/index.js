@@ -8,9 +8,10 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'URL parameter is required' });
     }
 
-    // Set up axios to allow redirects and handle content fetching properly
+    // Set up axios to not follow redirects (maxRedirects: 0)
     const axiosConfig = {
-      responseType: 'arraybuffer', // Handle binary data (like images)
+      maxRedirects: 0,  // Prevent redirects to base URL
+      responseType: 'arraybuffer',  // Handle binary data (like images)
     };
 
     // Fetch the content from the provided URL
@@ -38,9 +39,14 @@ module.exports = async (req, res) => {
     res.send(Buffer.from(response.data));
   } catch (error) {
     console.error('Error fetching content:', error.message || error);
-    
-    if (error.response && error.response.status === 301) {
-      return res.status(301).redirect(error.response.headers.location); // Follow the redirect manually
+
+    // Check if the error was a redirect (e.g., 301 or 302) and handle it
+    if (error.response && (error.response.status === 301 || error.response.status === 302)) {
+      const redirectUrl = error.response.headers.location;
+      if (redirectUrl && !redirectUrl.includes('districtlearning.org')) {
+        // Redirect to the new location (if it's not the base URL)
+        return res.redirect(redirectUrl);
+      }
     }
 
     // If there are issues with fetching the content or it's not HTML, handle the error
