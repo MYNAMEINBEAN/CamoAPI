@@ -7,6 +7,8 @@
     "start": "vercel start"
   },
   "dependencies": {
-    "axios": "^0.21.1"
+    "axios": "^0.21.1",
+    "puppeteer-core": "^10.1.0",
+    "chrome-aws-lambda": "^10.1.0"
   }
 }
