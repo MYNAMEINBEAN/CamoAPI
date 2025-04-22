@@ -8,10 +8,9 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'URL parameter is required' });
     }
 
-    // Set up axios with options to prevent redirects and handle content fetching properly
+    // Set up axios to allow redirects and handle content fetching properly
     const axiosConfig = {
       responseType: 'arraybuffer', // Handle binary data (like images)
-      maxRedirects: 0,  // Prevent following redirects automatically
     };
 
     // Fetch the content from the provided URL
@@ -35,14 +34,16 @@ module.exports = async (req, res) => {
       return res.send(htmlContent);
     }
 
-    // If the content is not HTML, return the raw content (like images)
+    // If the content is not HTML (e.g., images, videos, etc.), return the raw content
     res.send(Buffer.from(response.data));
   } catch (error) {
-    // Handle errors, especially redirects or fetch failures
     console.error('Error fetching content:', error.message || error);
+    
     if (error.response && error.response.status === 301) {
       return res.status(301).redirect(error.response.headers.location); // Follow the redirect manually
     }
+
+    // If there are issues with fetching the content or it's not HTML, handle the error
     res.status(500).json({ error: 'Failed to fetch content' });
   }
 };
