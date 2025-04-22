@@ -233,11 +233,13 @@ export default async function handler(req, res) {
                 );
             }
 
-            if (url.includes('https://schoology.pickens.k12.sc.us')) {
-            const regex = /action="(https:\/\/schoology\.pickens\.k12\.sc\.us[^"]+)"/;
-            data = data.replace(regex, (match, url) => {
-                const separator = url.includes('?') ? '&' : '?';
-                return `action="/API/index.js${separator}url=${encodeURIComponent(url)}"`;
+           if (url.includes('https://schoology.pickens.k12.sc.us')) {
+            const regex = /action="(\/login\/ldap\?[^"]+)"/;
+            data = data.replace(regex, (match, actionUrl) => {
+                // Ensure proper URL structure
+                const separator = actionUrl.includes('?') ? '&' : '?';
+                const targetUrl = `${actionUrl}${separator}url=${encodeURIComponent('https://schoology.pickens.k12.sc.us/login/ldap')}`;
+                return `action="${targetUrl}"`;
             });
         }
 
