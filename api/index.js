@@ -236,13 +236,13 @@ export default async function handler(req, res) {
            if (url.includes('https://schoology.pickens.k12.sc.us')) {
             const regex = /action="(\/login\/ldap\?[^"]+)"/;
             data = data.replace(regex, (match, actionUrl) => {
-                // Ensure proper URL structure
+                // Ensure we're replacing with the full URL, not relative to the current domain
+                const baseUrl = 'https://schoology.pickens.k12.sc.us';
                 const separator = actionUrl.includes('?') ? '&' : '?';
-                const targetUrl = `${actionUrl}${separator}url=${encodeURIComponent('https://schoology.pickens.k12.sc.us/login/ldap')}`;
+                const targetUrl = `${baseUrl}${actionUrl}${separator}url=${encodeURIComponent('https://schoology.pickens.k12.sc.us/login/ldap')}`;
                 return `action="${targetUrl}"`;
             });
         }
-
         }
 
         data = data.replace(/%20/g, ' ')
