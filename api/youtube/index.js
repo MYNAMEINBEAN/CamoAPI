@@ -1,51 +1,47 @@
-import axios from 'axios';
-import https from 'https';
+const axios = require('axios');
 
-export default async function handler(req, res) {
-  const { url } = req.query;
-  if (!url) return res.status(400).send("Missing `url` query parameter.");
-
-  if (req.method === 'OPTIONS') {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "*");
-    return res.status(204).end();
-  }
-
+module.exports = async (req, res) => {
   try {
-    const decodedUrl = decodeURIComponent(url);
-    const response = await axios.get(decodedUrl, {
-      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-      responseType: 'arraybuffer',
-      headers: { 'User-Agent': req.headers['user-agent'] || '' }
-    });
+    const { url } = req.query;
 
-    const contentType = response.headers['content-type'] || 'application/octet-stream';
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Content-Type", contentType);
-
-    const data = Buffer.from(response.data);
-
-    if (contentType.includes('text/html')) {
-      let html = data.toString('utf8');
-      const base = new URL(decodedUrl);
-
-      html = html.replace(/(src|href|poster)=["']([^"']+)["']/gi, (match, attr, link) => {
-        if (link.startsWith('data:') || link.startsWith('javascript:') || link.startsWith('mailto:')) return match;
-        try {
-          const abs = new URL(link, base).toString();
-          return `${attr}="/API/index.js?url=${encodeURIComponent(abs)}"`;
-        } catch {
-          return match;
-        }
-      });
-
-      return res.status(200).send(html);
+    // Ensure URL is provided
+    if (!url) {
+      return res.status(400).json({ error: 'No URL provided' });
     }
 
-    res.status(200).send(data);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send(`<pre>Proxy Error: ${err.message}</pre>`);
+    console.log(`Fetching content from: ${url}`);
+
+    // Make the HTTP request to the URL with headers adjusted
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.133 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Referer': 'https://www.youtube.com',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+      },
+      maxRedirects: 10,  // Allow up to 10 redirects
+      responseType: 'arraybuffer', // Handle the response as binary
+    });
+
+    console.log(`Response status: ${response.status}`);
+
+    // Convert the binary data to UTF-8 string
+    const data = Buffer.from(response.data, 'binary').toString('utf-8');
+
+    // Set content type as HTML
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(data); // Send the decoded HTML content
+
+  } catch (error) {
+    // Log the error to identify what went wrong
+    console.error('Error fetching content:', error.response ? error.response.status : error.message);
+    
+    // If there's an error in the response, we can provide more info
+    if (error.response) {
+      return res.status(error.response.status).json({ error: `Failed to fetch content. Status: ${error.response.status}` });
+    }
+
+    res.status(500).json({ error: 'Failed to fetch content.' });
   }
-}
+};
