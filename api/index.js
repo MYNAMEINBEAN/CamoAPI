@@ -233,9 +233,13 @@ export default async function handler(req, res) {
                 );
             }
 
-            if (url === 'https://schoology.pickens.k12.sc.us') {
-                data = data.replace(`action="`, `action="/API/index.js?url=https://schoology.pickens.k12.sc.us`);
-            }
+            if (url.includes('https://schoology.pickens.k12.sc.us')) {
+            const regex = /action="(https:\/\/schoology\.pickens\.k12\.sc\.us[^"]+)"/;
+            data = data.replace(regex, (match, url) => {
+                const separator = url.includes('?') ? '&' : '?';
+                return `action="/API/index.js${separator}url=${encodeURIComponent(url)}"`;
+            });
+        }
 
         }
 
