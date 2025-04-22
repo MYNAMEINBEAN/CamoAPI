@@ -18,9 +18,9 @@ module.exports = async (req, res) => {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
         'Referer': 'https://www.youtube.com',
         'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
+        'Upgrade-Insecure-Requests': '1',
       },
-      maxRedirects: 0, // Prevent automatic redirection
+      maxRedirects: 10,  // Allow up to 10 redirects
       responseType: 'arraybuffer', // Handle the response as binary
     });
 
