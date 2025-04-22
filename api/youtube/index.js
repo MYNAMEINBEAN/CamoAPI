@@ -1,47 +1,103 @@
-const axios = require('axios');
+import axios from 'axios';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
 
-module.exports = async (req, res) => {
-  try {
-    const { url } = req.query;
-
-    // Ensure URL is provided
-    if (!url) {
-      return res.status(400).json({ error: 'No URL provided' });
+export default async function handler(req, res) {
+    if (req.method === 'OPTIONS') {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, User-Agent, Referer");
+        return res.status(204).end();
     }
 
-    console.log(`Fetching content from: ${url}`);
+    let { url } = req.query;
+    if (!url) return res.status(400).send("Missing `url` query parameter.");
 
-    // Make the HTTP request to the URL with headers adjusted
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.133 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Referer': 'https://www.youtube.com',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-      },
-      maxRedirects: 10,  // Allow up to 10 redirects
-      responseType: 'arraybuffer', // Handle the response as binary
-    });
+    try {
+        url = decodeURIComponent(url);
+        console.log(`Proxying: ${url}`);
 
-    console.log(`Response status: ${response.status}`);
+        const agent = new https.Agent({ rejectUnauthorized: false });
 
-    // Convert the binary data to UTF-8 string
-    const data = Buffer.from(response.data, 'binary').toString('utf-8');
+        const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
+        const isBinary = /\.(woff2?|ttf|eot|otf|ico)$/i.test(url);
+        const isJson = /\.json$/i.test(url);
+        const isJs = /\.js$/i.test(url);
 
-    // Set content type as HTML
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(data); // Send the decoded HTML content
+        const response = await axios.get(url, {
+            httpsAgent: agent,
+            responseType: isImage || isBinary ? 'arraybuffer' : 'text',
+            timeout: 30000,
+            headers: {
+                'User-Agent': req.headers['user-agent'] || '',
+                'Accept': '*/*',
+            },
+        });
 
-  } catch (error) {
-    // Log the error to identify what went wrong
-    console.error('Error fetching content:', error.response ? error.response.status : error.message);
-    
-    // If there's an error in the response, we can provide more info
-    if (error.response) {
-      return res.status(error.response.status).json({ error: `Failed to fetch content. Status: ${error.response.status}` });
+        const contentType = response.headers['content-type'] || 'application/octet-stream';
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Content-Type", contentType);
+
+        const headers = { ...response.headers };
+        delete headers['content-security-policy'];
+        delete headers['content-security-policy-report-only'];
+        delete headers['x-frame-options'];
+
+        for (const [key, value] of Object.entries(headers)) {
+            res.setHeader(key, value);
+        }
+
+        if (isImage || isBinary) {
+            return res.status(response.status).send(Buffer.from(response.data));
+        }
+
+        if (isJson) {
+            return res.status(response.status).json(response.data);
+        }
+
+        let data = response.data;
+
+        // Handling YouTube-specific modifications (e.g., replacing video URLs)
+        if (!isJs && contentType.includes('text/html')) {
+            const baseUrl = new URL(url);
+
+            // Modify src or href attributes for YouTube-specific content (video embedding)
+            data = data.replace(/(src|href|srcset|poster)=["']([^"']+)["']/gi, (match, attr, link) => {
+                try {
+                    // Ignore data URLs, mailto, and javascript
+                    if (link.startsWith('data:') || link.startsWith('mailto:') || link.startsWith('javascript:')) {
+                        return match;
+                    }
+                    // For YouTube video links, modify the URLs as needed
+                    if (link.includes('youtube.com')) {
+                        const absoluteUrl = new URL(link, baseUrl).toString();
+                        const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
+                        return `${attr}="${proxied}"`;
+                    }
+                    const absoluteUrl = new URL(link, baseUrl).toString();
+                    const proxied = `/API/index.js?url=${encodeURIComponent(absoluteUrl)}`;
+                    return `${attr}="${proxied}"`;
+                } catch (e) {
+                    return match;
+                }
+            });
+
+            data = data.replace('loading="lazy"', 'loading="eager"');
+
+            // Handle YouTube video embeds (e.g., iframe)
+            data = data.replace(/<iframe\s+[^>]*src=["'](https:\/\/www\.youtube\.com\/embed\/[^"']+)["'][^>]*>/gi, (match, link) => {
+                const target = new URL(link, baseUrl).toString();
+                const proxied = `/API/index.js?url=${encodeURIComponent(target)}`;
+                return match.replace(link, proxied);
+            });
+        }
+
+        // Return the modified data
+        return res.status(response.status).send(data);
+
+    } catch (err) {
+        console.error(`Proxy Error: ${err.message}`);
+        return res.status(500).send(`<h1>Proxy Error</h1><p>${err.message}</p>`);
     }
-
-    res.status(500).json({ error: 'Failed to fetch content.' });
-  }
-};
+}
