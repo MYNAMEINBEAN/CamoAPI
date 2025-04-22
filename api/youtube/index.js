@@ -3,6 +3,7 @@ import puppeteer from "puppeteer-core";
 
 export default async function handler(req, res) {
   const targetUrl = req.query.url;
+
   if (!targetUrl) {
     return res.status(400).json({ error: "Missing 'url' parameter" });
   }
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
   try {
     browser = await puppeteer.launch({
       args: chrome.args,
-      executablePath: await chrome.executablePath,
+      executablePath: await chrome.executablePath || "/usr/bin/chromium-browser",
       headless: chrome.headless,
     });
 
@@ -23,8 +24,14 @@ export default async function handler(req, res) {
 
     res.status(200).json({ title });
   } catch (error) {
-    console.error("Error fetching content:", error);
-    res.status(500).json({ error: "Failed to fetch content." });
+    // Log the error on the server side for debugging
+    console.error("Error fetching content:", error.message || error);
+
+    // Send a response with a more descriptive error message
+    res.status(500).json({
+      error: "Failed to fetch content from the provided URL.",
+      details: error.message || String(error)
+    });
   } finally {
     if (browser) await browser.close();
   }
