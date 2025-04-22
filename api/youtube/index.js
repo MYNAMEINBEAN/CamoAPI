@@ -21,13 +21,13 @@ export default async function handler(req, res) {
         const agent = new https.Agent({ rejectUnauthorized: false });
 
         const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
-        const isBinary = /\.(woff2?|ttf|eot|otf|ico)$/i.test(url);
+        const isBinary = /\.(woff2?|ttf|eot|otf|ico|mp4|webm)$/i.test(url); // Added video formats
         const isJson = /\.json$/i.test(url);
         const isJs = /\.js$/i.test(url);
 
         const response = await axios.get(url, {
             httpsAgent: agent,
-            responseType: isImage || isBinary ? 'arraybuffer' : 'text',
+            responseType: isBinary ? 'arraybuffer' : 'text', // Adjusted to handle binary data
             timeout: 30000,
             headers: {
                 'User-Agent': req.headers['user-agent'] || '',
@@ -50,7 +50,8 @@ export default async function handler(req, res) {
             res.setHeader(key, value);
         }
 
-        if (isImage || isBinary) {
+        if (isBinary) {
+            // Handle binary data (like images, videos, fonts, etc.)
             return res.status(response.status).send(Buffer.from(response.data));
         }
 
@@ -98,7 +99,7 @@ export default async function handler(req, res) {
             });
         }
 
-        // Return the modified data
+        // Return the modified HTML data (if it's an HTML response)
         return res.status(response.status).send(data);
 
     } catch (err) {
