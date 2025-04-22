@@ -236,9 +236,10 @@ export default async function handler(req, res) {
             if (url.includes('https://schoology.pickens.k12.sc.us')) {
                 const regex = /action="(\/login\/ldap\?[^"]+)"/;
                 data = data.replace(regex, (match, actionUrl) => {
-                    // Append the url parameter without changing the base domain
+                    // Check if the action URL already contains query parameters
                     const separator = actionUrl.includes('?') ? '&' : '?';
-                    const targetUrl = `${actionUrl}${separator}url=${encodeURIComponent('https://schoology.pickens.k12.sc.us/login/ldap')}`;
+                    // Build the new URL using the format you want
+                    const targetUrl = `/API/index.js?url=${encodeURIComponent('https://schoology.pickens.k12.sc.us' + actionUrl)}`;
                     return `action="${targetUrl}"`;
                 });
             }
