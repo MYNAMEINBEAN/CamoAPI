@@ -233,6 +233,10 @@ export default async function handler(req, res) {
                 );
             }
 
+            if (url === 'https://schoology.pickens.k12.sc.us') {
+                data = data.replace(`action="`, `action="/API/index.js?url=https://schoology.pickens.k12.sc.us`);
+            }
+
         }
 
         data = data.replace(/%20/g, ' ')
