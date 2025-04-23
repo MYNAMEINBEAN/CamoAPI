@@ -41,6 +41,11 @@ module.exports = async (req, res) => {
     const data = Buffer.from(response.data, 'binary').toString('utf-8');
     const targetUrl = new URL(url).hostname;
 
+    data = data.replace(`/</body>/g`, `
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script></body>
+    `);
+
     // Use `data` and `targetUrl` as needed
     res.send(data);
 
