@@ -32,19 +32,26 @@ module.exports = async (req, res) => {
       <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
       <script>eruda.init();</script>
       <script>
-        document.querySelector('.ytSearchboxComponentSearchForm').addEventListener('submit', function(event) {
-          event.preventDefault();
-          const query = this.querySelector('input[name="search_query"]').value;
-          const proxyUrl = '/api/YouTube/index.js?url=' + encodeURIComponent('https://www.youtube.com/results?search_query=' + query);
-          fetch(proxyUrl)
-            .then(response => response.text())
-            .then(data => {
-              document.body.innerHTML = data;
-            })
-            .catch(error => {
-              console.error('Error fetching the proxied content:', error);
-              alert('An error occurred while fetching the content.');
+        document.addEventListener('DOMContentLoaded', function() {
+          const form = document.querySelector('.ytSearchboxComponentSearchForm');
+          if (form) {
+            form.action = '/api/YouTube/index.js';  // Change the form's action to the proxy endpoint
+
+            form.addEventListener('submit', function(event) {
+              event.preventDefault();
+              const query = this.querySelector('input[name="search_query"]').value;
+              const proxyUrl = '/api/YouTube/index.js?url=' + encodeURIComponent('https://www.youtube.com/results?search_query=' + query);
+              fetch(proxyUrl)
+                .then(response => response.text())
+                .then(data => {
+                  document.body.innerHTML = data;
+                })
+                .catch(error => {
+                  console.error('Error fetching the proxied content:', error);
+                  alert('An error occurred while fetching the content.');
+                });
             });
+          }
         });
       </script>
       </body>
