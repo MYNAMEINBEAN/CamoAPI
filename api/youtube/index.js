@@ -35,8 +35,6 @@ module.exports = async (req, res) => {
         document.addEventListener('DOMContentLoaded', function() {
           const form = document.querySelector('.ytSearchboxComponentSearchForm');
           if (form) {
-            form.action = '/api/YouTube/index.js';  // Change the form's action to the proxy endpoint
-
             form.addEventListener('submit', function(event) {
               event.preventDefault();
               const query = this.querySelector('input[name="search_query"]').value;
