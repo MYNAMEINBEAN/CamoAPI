@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { URL } = require('url');
+const iconv = require('iconv-lite');
 
 module.exports = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ module.exports = async (req, res) => {
 
     url = decodeURIComponent(url.trim());
 
-    // Redirect logic: if user enters districtlearning.org directly
+    // Redirect logic
     const normalizedUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
     if (normalizedUrl === 'districtlearning.org') {
       url = 'https://www.youtube.com';
@@ -21,14 +22,14 @@ module.exports = async (req, res) => {
 
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.133 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Accept': 'text/html,application/xhtml+xml',
         'Referer': 'https://www.youtube.com',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
       },
-      maxRedirects: 10,
       responseType: 'arraybuffer',
+      maxRedirects: 10,
     });
 
     const contentType = response.headers['content-type'] || 'text/html';
@@ -38,16 +39,17 @@ module.exports = async (req, res) => {
       return res.send(Buffer.from(response.data));
     }
 
-    const data = Buffer.from(response.data, 'binary').toString('utf-8');
-    const targetUrl = new URL(url).hostname;
+    // Use iconv to decode properly
+    const encoding = contentType.includes('charset=') ? contentType.split('charset=')[1] : 'utf-8';
+    let html = iconv.decode(response.data, encoding);
 
-    data.replace(/<\/body>/i, `
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script></body>
-    `);
+    // Inject script before </body>
+    html = html.replace(/<\/body>/i, `
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script></body>
+`);
 
-    // Use `data` and `targetUrl` as needed
-    res.send(data);
+    res.send(html);
 
   } catch (error) {
     console.error('Error fetching content:', error.response ? error.response.status : error.message);
