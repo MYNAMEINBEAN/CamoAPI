@@ -1,61 +1,40 @@
 const axios = require('axios');
-const { URL } = require('url');
-const iconv = require('iconv-lite');
 
 module.exports = async (req, res) => {
   try {
-    let { url } = req.query;
+    const { url } = req.query;
 
     if (!url) {
-      return res.status(400).json({ error: 'No URL provided' });
+      return res.status(400).json({ error: 'Missing URL parameter' });
     }
 
-    url = decodeURIComponent(url.trim());
+    const decodedUrl = decodeURIComponent(url.trim());
+    console.log("Fetching URL:", decodedUrl);
 
-    // Redirect logic
-    const normalizedUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    if (normalizedUrl === 'districtlearning.org') {
-      url = 'https://www.youtube.com';
-    }
-
-    console.log(`Fetching content from: ${url}`);
-
-    const response = await axios.get(url, {
+    const response = await axios.get(decodedUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Referer': 'https://www.youtube.com',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'text/html',
       },
-      responseType: 'arraybuffer',
-      maxRedirects: 10,
+      responseType: 'arraybuffer'
     });
 
     const contentType = response.headers['content-type'] || 'text/html';
     res.setHeader('Content-Type', contentType);
 
     if (!contentType.includes('text/html')) {
-      return res.send(Buffer.from(response.data));
+      return res.send(response.data);
     }
 
-    // Use iconv to decode properly
-    const encoding = contentType.includes('charset=') ? contentType.split('charset=')[1] : 'utf-8';
-    let html = iconv.decode(response.data, encoding);
+    let html = Buffer.from(response.data).toString('utf-8');
 
-    // Inject script before </body>
     html = html.replace(/<\/body>/i, `
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script></body>
-`);
+<script>eruda.init();</script></body>`);
 
     res.send(html);
-
-  } catch (error) {
-    console.error('Error fetching content:', error.response ? error.response.status : error.message);
-    if (error.response) {
-      return res.status(error.response.status).json({ error: `Failed to fetch content. Status: ${error.response.status}` });
-    }
-    res.status(500).json({ error: 'Failed to fetch content.' });
+  } catch (err) {
+    console.error("Error occurred:", err.message);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
