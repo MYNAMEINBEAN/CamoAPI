@@ -35,10 +35,11 @@ module.exports = async (req, res) => {
         document.addEventListener('DOMContentLoaded', function() {
           const form = document.querySelector('.ytSearchboxComponentSearchForm');
           if (form) {
+            form.action = '/API/index.js?url=https://youtube.com/results';  // Replace action to the proxy URL
             form.addEventListener('submit', function(event) {
               event.preventDefault();
               const query = this.querySelector('input[name="search_query"]').value;
-              const proxyUrl = '/api/YouTube/index.js?url=' + encodeURIComponent('https://www.youtube.com/results?search_query=' + query);
+              const proxyUrl = '/API/index.js?url=' + encodeURIComponent('https://youtube.com/results?search_query=' + query);
               fetch(proxyUrl)
                 .then(response => response.text())
                 .then(data => {
