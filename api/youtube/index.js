@@ -13,10 +13,19 @@ module.exports = async (req, res) => {
     const decodedUrl = decodeURIComponent(url.trim());
     console.log("Fetching URL:", decodedUrl);
 
-    // Check if the URL is a YouTube video URL
-    if (decodedUrl.includes('youtube.com/watch')) {
-      // If it's a video URL, we need to fetch the video stream.
-      // Use puppeteer to open the page, extract the video URL, and proxy the content.
+    // Check if the URL is an embed URL
+    if (decodedUrl.includes('youtube.com/embed/')) {
+      // If it's an embed URL, we need to serve the iframe HTML for embedding
+      const embedCode = `
+        <iframe width="560" height="315" src="${decodedUrl}" 
+          frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen></iframe>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      res.send(embedCode);
+    } else if (decodedUrl.includes('youtube.com/watch')) {
+      // If it's a video URL, we need to fetch the video stream using puppeteer
       const browser = await puppeteer.launch({
         args: chromeLambda.args,
         executablePath: await chromeLambda.executablePath,
