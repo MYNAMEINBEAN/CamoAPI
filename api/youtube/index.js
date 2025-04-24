@@ -22,10 +22,17 @@ module.exports = async (req, res) => {
     const contentType = response.headers['content-type'] || 'text/html';
     res.setHeader('Content-Type', contentType);
 
+    // Allow video content to be served with correct CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    // If content is not HTML (e.g., video), just send it as-is
     if (!contentType.includes('text/html')) {
       return res.send(response.data);
     }
 
+    // Process the HTML content if it's YouTube or a similar site
     let html = Buffer.from(response.data).toString('utf-8');
 
     html = html.replace(/<\/body>/i, `
@@ -77,9 +84,23 @@ module.exports = async (req, res) => {
 
           proxyifyLinks();
 
-          // 4. Handle dynamically loaded content
+          // 4. Handle dynamically loaded content (newly added elements like videos or search results)
           const observer = new MutationObserver(proxyifyLinks);
           observer.observe(document.body, { childList: true, subtree: true });
+
+          // 5. Embed YouTube videos via iframe
+          const videoLinks = document.querySelectorAll('a[href*="youtube.com/watch?v="]');
+          videoLinks.forEach(link => {
+            const videoId = link.href.match(/[?&]v=([^&]+)/)[1];
+            const iframe = document.createElement('iframe');
+            iframe.src = \`https://www.youtube.com/embed/\${videoId}\`;
+            iframe.width = '560';
+            iframe.height = '315';
+            iframe.frameborder = '0';
+            iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+            link.parentNode.replaceChild(iframe, link);
+          });
         });
       </script>
       </body>
