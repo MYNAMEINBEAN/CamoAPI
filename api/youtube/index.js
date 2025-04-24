@@ -33,82 +33,63 @@ module.exports = async (req, res) => {
       return `/api/youtube/index.js?url=${encodeURIComponent(url)}`;
     };
 
-    // Insert the debugging tool and make videos fullscreen
+    // Ensure links to YouTube videos, scripts, and resources are proxified
+    html = html.replace(/href="([^"]+)"/g, (match, p1) => {
+      const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl(`https://youtube.com${p1}`);
+      return `href="${proxiedUrl}"`;
+    });
+
+    html = html.replace(/src="([^"]+)"/g, (match, p1) => {
+      const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl(`https://youtube.com${p1}`);
+      return `src="${proxiedUrl}"`;
+    });
+
+    // Ensure any script or stylesheet links are also proxified
+    html = html.replace(/<script[^>]+src="([^"]+)"/g, (match, p1) => {
+      const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl(`https://youtube.com${p1}`);
+      return `<script src="${proxiedUrl}"`;
+    });
+
+    html = html.replace(/<link[^>]+href="([^"]+)"/g, (match, p1) => {
+      const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl(`https://youtube.com${p1}`);
+      return `<link href="${proxiedUrl}"`;
+    });
+
+    // Insert everything in a <script> at the end of the body tag
     html = html.replace(/<\/body>/i, `
-      <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-      <script>eruda.init();</script>
       <script>
         document.addEventListener('DOMContentLoaded', () => {
-          try {
-            // 1. Remove original search form
-            const oldForm = document.querySelector('.ytSearchboxComponentSearchForm');
-            if (oldForm) oldForm.remove();
+          // Insert Eruda Debugging tool
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+          script.onload = () => {
+            eruda.init();
+          };
+          document.body.appendChild(script);
 
-            // 2. Inject custom search bar
-            const inputBox = document.querySelector('.ytSearchboxComponentInputBox');
-            if (inputBox) {
-              inputBox.innerHTML = \`
-                <input id="ytProxySearchInput" type="text" placeholder="Search YouTube..." 
-                  style="padding: 6px; font-size: 14px; width: 300px;" />
-                <button id="ytProxySearchBtn" style="padding: 6px 10px; font-size: 14px;">Search</button>
-              \`;
-
-              function runProxySearch() {
-                const query = document.getElementById('ytProxySearchInput').value.trim();
-                if (!query) return;
-                const proxyUrl = '/api/youtube/index.js?url=' + encodeURIComponent('https://youtube.com/results?search_query=' + query);
-                window.location.href = proxyUrl;
-              }
-
-              document.getElementById('ytProxySearchBtn').addEventListener('click', runProxySearch);
-              document.getElementById('ytProxySearchInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') runProxySearch();
+          // Proxyify all video links and intercept clicks
+          function proxyifyLinks() {
+            document.querySelectorAll('a[href^="/watch"]').forEach(link => {
+              const originalHref = link.getAttribute('href');
+              const fullYouTubeUrl = 'https://youtube.com' + originalHref;
+              const proxiedUrl = '/api/youtube/index.js?url=' + encodeURIComponent(fullYouTubeUrl);
+              link.setAttribute('href', proxiedUrl);
+              link.onclick = null;
+              link.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.location.href = proxiedUrl;
               });
-            }
-
-            // 3. Proxyify all video links and intercept clicks
-            function proxyifyLinks() {
-              document.querySelectorAll('a[href^="/watch"]').forEach(link => {
-                const originalHref = link.getAttribute('href');
-                const fullYouTubeUrl = 'https://youtube.com' + originalHref;
-                const proxiedUrl = '/api/youtube/index.js?url=' + encodeURIComponent(fullYouTubeUrl);
-
-                link.setAttribute('href', proxiedUrl);
-                link.onclick = null;
-                link.addEventListener('click', function (e) {
-                  e.preventDefault();
-                  window.location.href = proxiedUrl;
-                });
-              });
-            }
-
-            proxyifyLinks();
-
-            // 4. Handle dynamically loaded content
-            const observer = new MutationObserver(proxyifyLinks);
-            observer.observe(document.body, { childList: true, subtree: true });
-
-            // 5. Make embedded videos fullscreen
-            const iframe = document.querySelector('iframe');
-            if (iframe) {
-              iframe.style.width = "100%";
-              iframe.style.height = "100%";
-              iframe.setAttribute('allowfullscreen', '');
-              iframe.setAttribute('frameborder', '0');
-            }
-
-            // 6. Proxify all href and src URLs in the page
-            html = html.replace(/href="([^"]+)"/g, (match, p1) => {
-              const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl('https://youtube.com${p1}');
-              return 'href="${proxiedUrl}"';
             });
+          }
+          proxyifyLinks();
 
-            html = html.replace(/src="([^"]+)"/g, (match, p1) => {
-              const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl('https://youtube.com${p1}');
-              return 'src="${proxiedUrl}';
-            });
-          } catch (err) {
-            console.error('Error while injecting custom scripts:', err);
+          // Make embedded videos fullscreen
+          const iframe = document.querySelector('iframe');
+          if (iframe) {
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.setAttribute('allowfullscreen', '');
+            iframe.setAttribute('frameborder', '0');
           }
         });
       </script>
