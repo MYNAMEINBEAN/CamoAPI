@@ -39,73 +39,77 @@ module.exports = async (req, res) => {
       <script>eruda.init();</script>
       <script>
         document.addEventListener('DOMContentLoaded', () => {
-          // 1. Remove original search form
-          const oldForm = document.querySelector('.ytSearchboxComponentSearchForm');
-          if (oldForm) oldForm.remove();
+          try {
+            // 1. Remove original search form
+            const oldForm = document.querySelector('.ytSearchboxComponentSearchForm');
+            if (oldForm) oldForm.remove();
 
-          // 2. Inject custom search bar
-          const inputBox = document.querySelector('.ytSearchboxComponentInputBox');
-          if (inputBox) {
-            inputBox.innerHTML = \`
-              <input id="ytProxySearchInput" type="text" placeholder="Search YouTube..." 
-                style="padding: 6px; font-size: 14px; width: 300px;" />
-              <button id="ytProxySearchBtn" style="padding: 6px 10px; font-size: 14px;">Search</button>
-            \`;
+            // 2. Inject custom search bar
+            const inputBox = document.querySelector('.ytSearchboxComponentInputBox');
+            if (inputBox) {
+              inputBox.innerHTML = \`
+                <input id="ytProxySearchInput" type="text" placeholder="Search YouTube..." 
+                  style="padding: 6px; font-size: 14px; width: 300px;" />
+                <button id="ytProxySearchBtn" style="padding: 6px 10px; font-size: 14px;">Search</button>
+              \`;
 
-            function runProxySearch() {
-              const query = document.getElementById('ytProxySearchInput').value.trim();
-              if (!query) return;
-              const proxyUrl = '/api/youtube/index.js?url=' + encodeURIComponent('https://youtube.com/results?search_query=' + query);
-              window.location.href = proxyUrl;
+              function runProxySearch() {
+                const query = document.getElementById('ytProxySearchInput').value.trim();
+                if (!query) return;
+                const proxyUrl = '/api/youtube/index.js?url=' + encodeURIComponent('https://youtube.com/results?search_query=' + query);
+                window.location.href = proxyUrl;
+              }
+
+              document.getElementById('ytProxySearchBtn').addEventListener('click', runProxySearch);
+              document.getElementById('ytProxySearchInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') runProxySearch();
+              });
             }
 
-            document.getElementById('ytProxySearchBtn').addEventListener('click', runProxySearch);
-            document.getElementById('ytProxySearchInput').addEventListener('keydown', (e) => {
-              if (e.key === 'Enter') runProxySearch();
-            });
-          }
+            // 3. Proxyify all video links and intercept clicks
+            function proxyifyLinks() {
+              document.querySelectorAll('a[href^="/watch"]').forEach(link => {
+                const originalHref = link.getAttribute('href');
+                const fullYouTubeUrl = 'https://youtube.com' + originalHref;
+                const proxiedUrl = '/api/youtube/index.js?url=' + encodeURIComponent(fullYouTubeUrl);
 
-          // 3. Proxyify all video links and intercept clicks
-          function proxyifyLinks() {
-            document.querySelectorAll('a[href^="/watch"]').forEach(link => {
-              const originalHref = link.getAttribute('href');
-              const fullYouTubeUrl = 'https://youtube.com' + originalHref;
-              const proxiedUrl = '/api/youtube/index.js?url=' + encodeURIComponent(fullYouTubeUrl);
-
-              link.setAttribute('href', proxiedUrl);
-              link.onclick = null;
-              link.addEventListener('click', function (e) {
-                e.preventDefault();
-                window.location.href = proxiedUrl;
+                link.setAttribute('href', proxiedUrl);
+                link.onclick = null;
+                link.addEventListener('click', function (e) {
+                  e.preventDefault();
+                  window.location.href = proxiedUrl;
+                });
               });
+            }
+
+            proxyifyLinks();
+
+            // 4. Handle dynamically loaded content
+            const observer = new MutationObserver(proxyifyLinks);
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            // 5. Make embedded videos fullscreen
+            const iframe = document.querySelector('iframe');
+            if (iframe) {
+              iframe.style.width = "100%";
+              iframe.style.height = "100%";
+              iframe.setAttribute('allowfullscreen', '');
+              iframe.setAttribute('frameborder', '0');
+            }
+
+            // 6. Proxify all href and src URLs in the page
+            html = html.replace(/href="([^"]+)"/g, (match, p1) => {
+              const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl('https://youtube.com${p1}');
+              return 'href="${proxiedUrl}"';
             });
+
+            html = html.replace(/src="([^"]+)"/g, (match, p1) => {
+              const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl('https://youtube.com${p1}');
+              return 'src="${proxiedUrl}';
+            });
+          } catch (err) {
+            console.error('Error while injecting custom scripts:', err);
           }
-
-          proxyifyLinks();
-
-          // 4. Handle dynamically loaded content
-          const observer = new MutationObserver(proxyifyLinks);
-          observer.observe(document.body, { childList: true, subtree: true });
-
-          // 5. Make embedded videos fullscreen
-          const iframe = document.querySelector('iframe');
-          if (iframe) {
-            iframe.style.width = "100%";
-            iframe.style.height = "100%";
-            iframe.setAttribute('allowfullscreen', '');
-            iframe.setAttribute('frameborder', '0');
-          }
-
-          // 6. Proxify all href and src URLs in the page
-          html = html.replace(/href="([^"]+)"/g, (match, p1) => {
-            const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl(`https://youtube.com${p1}`);
-            return `href="${proxiedUrl}"`;
-          });
-
-          html = html.replace(/src="([^"]+)"/g, (match, p1) => {
-            const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl(`https://youtube.com${p1}`);
-            return `src="${proxiedUrl}"`;
-          });
         });
       </script>
       </body>
