@@ -1,4 +1,5 @@
 const axios = require('axios');
+const cookie = require('cookie');  // Use this to parse and set cookies
 
 module.exports = async (req, res) => {
   try {
@@ -11,35 +12,43 @@ module.exports = async (req, res) => {
     const decodedUrl = decodeURIComponent(url.trim());
     console.log("Fetching URL:", decodedUrl);
 
+    // Make the HTTP request to the target URL
     const response = await axios.get(decodedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
         'Accept': 'text/html',
+        // Forward any cookies from the incoming request
+        'Cookie': req.headers.cookie || ''
       },
       responseType: 'arraybuffer'
     });
 
+    // Determine the content type (image, video, html, etc.)
     const contentType = response.headers['content-type'] || 'text/html';
     res.setHeader('Content-Type', contentType);
 
-    // Allow video content to be served with correct CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    // If content is not HTML (e.g., video), just send it as-is
-    if (!contentType.includes('text/html')) {
-      return res.send(response.data);
+    // Handle cookies from the response (Set-Cookie headers)
+    if (response.headers['set-cookie']) {
+      const cookies = response.headers['set-cookie'];
+      cookies.forEach(cookieHeader => {
+        res.setHeader('Set-Cookie', cookieHeader); // Send cookies to client
+      });
     }
 
-    // Process the HTML content if it's YouTube or a similar site
+    // Check if the content is not HTML (like images or videos)
+    if (!contentType.includes('text/html')) {
+      return res.send(response.data); // Send binary content as is (e.g., videos, images)
+    }
+
+    // Otherwise, process HTML content
     let html = Buffer.from(response.data).toString('utf-8');
 
+    // Modify the HTML content (e.g., injecting custom scripts or replacing content)
     html = html.replace(/<\/body>/i, `
       <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
       <script>eruda.init();</script>
       <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
           // 1. Remove original search form
           const oldForm = document.querySelector('.ytSearchboxComponentSearchForm');
           if (oldForm) oldForm.remove();
@@ -84,23 +93,9 @@ module.exports = async (req, res) => {
 
           proxyifyLinks();
 
-          // 4. Handle dynamically loaded content (newly added elements like videos or search results)
+          // 4. Handle dynamically loaded content
           const observer = new MutationObserver(proxyifyLinks);
           observer.observe(document.body, { childList: true, subtree: true });
-
-          // 5. Embed YouTube videos via iframe
-          const videoLinks = document.querySelectorAll('a[href*="youtube.com/watch?v="]');
-          videoLinks.forEach(link => {
-            const videoId = link.href.match(/[?&]v=([^&]+)/)[1];
-            const iframe = document.createElement('iframe');
-            iframe.src = \`https://www.youtube.com/embed/\${videoId}\`;
-            iframe.width = '560';
-            iframe.height = '315';
-            iframe.frameborder = '0';
-            iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
-            iframe.allowFullscreen = true;
-            link.parentNode.replaceChild(iframe, link);
-          });
         });
       </script>
       </body>
