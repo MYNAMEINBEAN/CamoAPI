@@ -28,6 +28,25 @@ module.exports = async (req, res) => {
 
     let html = Buffer.from(response.data).toString('utf-8');
 
+    // Helper function to proxify URLs
+    const proxifyUrl = (url) => {
+      return `/api/youtube/index.js?url=${encodeURIComponent(url)}`;
+    };
+
+    // Replace all href, src, and other relevant attributes with the proxified version
+    html = html.replace(/href="([^"]+)"/g, (match, p1) => {
+      // Handle absolute URLs (e.g., /watch?v=abc123 or https://youtube.com/... or relative paths)
+      const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl(`https://youtube.com${p1}`);
+      return `href="${proxiedUrl}"`;
+    });
+
+    html = html.replace(/src="([^"]+)"/g, (match, p1) => {
+      // Handle absolute URLs (e.g., images, scripts, videos, etc.)
+      const proxiedUrl = p1.startsWith('http') || p1.startsWith('www') ? proxifyUrl(p1) : proxifyUrl(`https://youtube.com${p1}`);
+      return `src="${proxiedUrl}"`;
+    });
+
+    // Insert the debugging tool and make videos fullscreen
     html = html.replace(/<\/body>/i, `
       <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
       <script>eruda.init();</script>
