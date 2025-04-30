@@ -139,7 +139,7 @@ export default async function handler(req, res) {
                         </script>
                     </body>
                 `);
-            } else if (url.includes('https://google.com')) {
+            } else if (url.includes('google.com')) {
                 const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
                 data = fs.readFileSync(filePath, 'utf8');
                 data = data.replace(
@@ -153,7 +153,7 @@ export default async function handler(req, res) {
                                         if (event.key === 'Enter') {
                                             event.preventDefault();
                                             const searchTerm = searchInput.value;
-                                            const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchTerm);
+                                            const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchTerm) + '&source=hp&sclient=gws-wiz-modeless-web-only';
                                             window.location.href = '/API/index.js?url=' + encodeURIComponent(searchUrl);
                                         }
                                     });
