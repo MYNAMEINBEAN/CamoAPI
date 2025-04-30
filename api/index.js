@@ -139,76 +139,7 @@ export default async function handler(req, res) {
                         </script>
                     </body>
                 `);
-            } else if (url === 'https://google.com') {
-                const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
-                data = fs.readFileSync(filePath, 'utf8');
-                data = data.replace(
-                    /<\/body>/i,
-                    `
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function () {
-                                const searchInput = document.querySelector('input[name="q"], textarea[name="q"]');
-                                if (searchInput) {
-                                    searchInput.addEventListener('keypress', function (event) {
-                                        if (event.key === 'Enter') {
-                                            event.preventDefault();
-                                            const searchTerm = searchInput.value;
-                                            const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchTerm);
-                                            window.location.href = '/API/index.js?url=' + encodeURIComponent(searchUrl);
-                                        }
-                                    });
-                                }
-                            });
-                        </script>
-                    </body>`
-                );
-            } else if (url === 'https://google.com/') {
-                const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
-                data = fs.readFileSync(filePath, 'utf8');
-                data = data.replace(
-                    /<\/body>/i,
-                    `
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function () {
-                                const searchInput = document.querySelector('input[name="q"], textarea[name="q"]');
-                                if (searchInput) {
-                                    searchInput.addEventListener('keypress', function (event) {
-                                        if (event.key === 'Enter') {
-                                            event.preventDefault();
-                                            const searchTerm = searchInput.value;
-                                            const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchTerm);
-                                            window.location.href = '/API/index.js?url=' + encodeURIComponent(searchUrl);
-                                        }
-                                    });
-                                }
-                            });
-                        </script>
-                    </body>`
-                );
-            } else if (url === 'google.com') {
-                const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
-                data = fs.readFileSync(filePath, 'utf8');
-                data = data.replace(
-                    /<\/body>/i,
-                    `
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function () {
-                                const searchInput = document.querySelector('input[name="q"], textarea[name="q"]');
-                                if (searchInput) {
-                                    searchInput.addEventListener('keypress', function (event) {
-                                        if (event.key === 'Enter') {
-                                            event.preventDefault();
-                                            const searchTerm = searchInput.value;
-                                            const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchTerm);
-                                            window.location.href = '/API/index.js?url=' + encodeURIComponent(searchUrl);
-                                        }
-                                    });
-                                }
-                            });
-                        </script>
-                    </body>`
-                );
-            } else if (url.includes('google.com/webhp')) {
+            } else if (url.includes('https://google.com')) {
                 const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
                 data = fs.readFileSync(filePath, 'utf8');
                 data = data.replace(
