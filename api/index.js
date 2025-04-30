@@ -232,17 +232,6 @@ export default async function handler(req, res) {
                     </body>`
                 );
             }
-
-            if (url.includes('https://schoology.pickens.k12.sc.us')) {
-                const regex = /action="(\/login\/ldap\?[^"]+)"/;
-                data = data.replace(regex, (match, actionUrl) => {
-                    // Check if the action URL already contains query parameters
-                    const separator = actionUrl.includes('?') ? '&' : '?';
-                    // Build the new URL using the format you want
-                    const targetUrl = `/API/index.js?url=${encodeURIComponent('https://schoology.pickens.k12.sc.us' + actionUrl)}`;
-                    return `action="${targetUrl}"`;
-                });
-            }
                 
         }
 
