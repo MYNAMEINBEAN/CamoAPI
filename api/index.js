@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import https from 'https';
 import fs from 'fs';
@@ -139,7 +140,7 @@ export default async function handler(req, res) {
                         </script>
                     </body>
                 `);
-            } else if (url.includes('google.com')) {
+            } else if (url.includes('https://google.com')) {
                 const filePath = path.join(process.cwd(), 'static', 'google', 'index.html');
                 data = fs.readFileSync(filePath, 'utf8');
                 data = data.replace(
@@ -153,7 +154,7 @@ export default async function handler(req, res) {
                                         if (event.key === 'Enter') {
                                             event.preventDefault();
                                             const searchTerm = searchInput.value;
-                                            const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchTerm) + '&source=hp&sclient=gws-wiz-modeless-web-only';
+                                            const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchTerm);
                                             window.location.href = '/API/index.js?url=' + encodeURIComponent(searchUrl);
                                         }
                                     });
