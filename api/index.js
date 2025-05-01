@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import https from 'https';
 import fs from 'fs';
@@ -127,6 +126,15 @@ export default async function handler(req, res) {
                 }
             });
 
+            data = data.replace(/href=["'](https?:\/\/[^"']+)["']/gi, (match, link) => {
+                try {
+                    const proxied = `/API/index.js?url=${encodeURIComponent(link)}`;
+                    return `href="${proxied}"`;
+                } catch (e) {
+                    return match;
+                }
+            });
+
             if (url.includes('google.com/search')) {
                 const formRegex = /<form\s+class="tsf"[^>]*role="search"[^>]*>[\s\S]*?<\/form>/i;
                 
@@ -164,7 +172,6 @@ export default async function handler(req, res) {
                     </body>`
                 );
             }
-                
         }
 
         data = data.replace(/%20/g, ' ')
