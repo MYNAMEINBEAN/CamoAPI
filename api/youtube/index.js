@@ -58,6 +58,12 @@ module.exports = async (req, res) => {
       return `<iframe src="${proxiedUrl}"`;
     });
 
+    // Specifically handle the ytd-player container (if the video is embedded in a <ytd-player> tag)
+    html = html.replace(/<ytd-player[^>]+src="([^"]+)"/g, (match, p1) => {
+      const proxiedUrl = convertToEmbedUrl(p1);
+      return `<ytd-player src="${proxiedUrl}"`;
+    });
+
     // Insert Eruda debugging tool just before the closing </body> tag
     html = html.replace(/<\/body>/i, `
       <script>
