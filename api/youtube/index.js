@@ -41,44 +41,66 @@ module.exports = async (req, res) => {
       return url; // Return original URL if it's not a YouTube link
     };
 
+    // Function to proxy URLs through your proxy
+    const proxyUrl = (url) => {
+      return `https://www.districtlearning.org/api/youtube/index.js?url=${encodeURIComponent(url)}`;
+    };
+
     // Modify the HTML to convert YouTube URLs in href, src, and iframe src
     html = html.replace(/href="([^"]+)"/g, (match, p1) => {
-      const proxiedUrl = convertToEmbedUrl(p1);
+      const proxiedUrl = proxyUrl(convertToEmbedUrl(p1));
       return `href="${proxiedUrl}"`;
     });
 
     html = html.replace(/src="([^"]+)"/g, (match, p1) => {
-      const proxiedUrl = convertToEmbedUrl(p1);
+      const proxiedUrl = proxyUrl(convertToEmbedUrl(p1));
       return `src="${proxiedUrl}"`;
     });
 
     // Specifically target iframe src URLs and convert them
     html = html.replace(/<iframe[^>]+src="([^"]+)"/g, (match, p1) => {
-      const proxiedUrl = convertToEmbedUrl(p1);
+      const proxiedUrl = proxyUrl(convertToEmbedUrl(p1));
       return `<iframe src="${proxiedUrl}" style="border: none;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     });
 
     // Replace YouTube player container with an iframe if blocked or error occurs
     html = html.replace(/<ytd-player[^>]+src="([^"]+)"/g, (match, p1) => {
-      const proxiedUrl = convertToEmbedUrl(p1);
+      const proxiedUrl = proxyUrl(convertToEmbedUrl(p1));
       return `<iframe src="${proxiedUrl}" style="border: none;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     });
 
-    // Insert Eruda debugging tool just before the closing </body> tag
+    // Insert a script that will proxy window.location.href and window.open
     html = html.replace(/<\/body>/i, `
       <script>
-        (function() {
-          var script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-          script.onload = function() {
-            eruda.init();
-          };
-          document.body.appendChild(script);
-        })();
+        // Proxy window.location.href and window.open
+        const proxyUrl = (url) => {
+          return 'https://www.districtlearning.org/api/youtube/index.js?url=' + encodeURIComponent(url);
+        };
+
+        // Override window.location.href to use proxy
+        Object.defineProperty(window, 'location', {
+          get: function() {
+            return {
+              href: proxyUrl(window.location.href)
+            };
+          }
+        });
+
+        // Override window.open to use proxy
+        const originalOpen = window.open;
+        window.open = function(url, ...args) {
+          return originalOpen.call(window, proxyUrl(url), ...args);
+        };
+
+        // Also handle any links in the page to ensure they are proxied
+        document.querySelectorAll('a').forEach(link => {
+          const originalHref = link.href;
+          link.href = proxyUrl(originalHref);
+        });
       </script>
     </body>`);
 
-    // Send the modified HTML with Eruda and proxified URLs
+    // Send the modified HTML with the proxied URLs
     res.send(html);
   } catch (err) {
     console.error("Error occurred:", err.message);
