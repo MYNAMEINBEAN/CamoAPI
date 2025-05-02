@@ -31,6 +31,21 @@ module.exports = async (req, res) => {
     // Convert arraybuffer to string if it's HTML
     let html = Buffer.from(response.data).toString('utf-8');
 
+    // Insert Eruda debugging tool just before the closing </body> tag
+    html = html.replace(/<\/body>/i, `
+      <script>
+        (function() {
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+          script.onload = function() {
+            eruda.init();
+          };
+          document.body.appendChild(script);
+        })();
+      </script>
+    </body>`);
+
+    // Send the modified HTML with Eruda integrated
     res.send(html);
   } catch (err) {
     console.error("Error occurred:", err.message);
