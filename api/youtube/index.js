@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
       return url; // Return original URL if it's not a YouTube link
     };
 
-    // Modify the HTML to convert YouTube URLs
+    // Modify the HTML to convert YouTube URLs in href, src, and iframe src
     html = html.replace(/href="([^"]+)"/g, (match, p1) => {
       const proxiedUrl = convertToEmbedUrl(p1);
       return `href="${proxiedUrl}"`;
@@ -50,6 +50,12 @@ module.exports = async (req, res) => {
     html = html.replace(/src="([^"]+)"/g, (match, p1) => {
       const proxiedUrl = convertToEmbedUrl(p1);
       return `src="${proxiedUrl}"`;
+    });
+
+    // Specifically target iframe src URLs and convert them
+    html = html.replace(/<iframe[^>]+src="([^"]+)"/g, (match, p1) => {
+      const proxiedUrl = convertToEmbedUrl(p1);
+      return `<iframe src="${proxiedUrl}"`;
     });
 
     // Insert Eruda debugging tool just before the closing </body> tag
