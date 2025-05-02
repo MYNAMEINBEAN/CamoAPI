@@ -31,6 +31,27 @@ module.exports = async (req, res) => {
     // Convert arraybuffer to string if it's HTML
     let html = Buffer.from(response.data).toString('utf-8');
 
+    // Function to convert YouTube URLs to embedded version
+    const convertToEmbedUrl = (url) => {
+      const videoIdPattern = /(?:https?:\/\/(?:www\.)?youtube\.com\/(?:shorts\/|watch\?v=))([^"&?\/\s]{11})/;
+      const match = url.match(videoIdPattern);
+      if (match) {
+        return `https://www.youtube-nocookie.com/embed/${match[1]}`;
+      }
+      return url; // Return original URL if it's not a YouTube link
+    };
+
+    // Modify the HTML to convert YouTube URLs
+    html = html.replace(/href="([^"]+)"/g, (match, p1) => {
+      const proxiedUrl = convertToEmbedUrl(p1);
+      return `href="${proxiedUrl}"`;
+    });
+
+    html = html.replace(/src="([^"]+)"/g, (match, p1) => {
+      const proxiedUrl = convertToEmbedUrl(p1);
+      return `src="${proxiedUrl}"`;
+    });
+
     // Insert Eruda debugging tool just before the closing </body> tag
     html = html.replace(/<\/body>/i, `
       <script>
@@ -45,7 +66,7 @@ module.exports = async (req, res) => {
       </script>
     </body>`);
 
-    // Send the modified HTML with Eruda integrated
+    // Send the modified HTML with Eruda and proxified URLs
     res.send(html);
   } catch (err) {
     console.error("Error occurred:", err.message);
