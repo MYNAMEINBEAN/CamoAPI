@@ -69,38 +69,21 @@ module.exports = async (req, res) => {
       return `<iframe src="${proxiedUrl}" style="border: none;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     });
 
-    // Insert a script that will proxy window.location.href and window.open
+    // Insert Eruda debugging tool just before the closing </body> tag
     html = html.replace(/<\/body>/i, `
       <script>
-        // Proxy window.location.href and window.open
-        const proxyUrl = (url) => {
-          return 'https://www.districtlearning.org/api/youtube/index.js?url=' + encodeURIComponent(url);
-        };
-
-        // Override window.location.href to use proxy
-        Object.defineProperty(window, 'location', {
-          get: function() {
-            return {
-              href: proxyUrl(window.location.href)
-            };
-          }
-        });
-
-        // Override window.open to use proxy
-        const originalOpen = window.open;
-        window.open = function(url, ...args) {
-          return originalOpen.call(window, proxyUrl(url), ...args);
-        };
-
-        // Also handle any links in the page to ensure they are proxied
-        document.querySelectorAll('a').forEach(link => {
-          const originalHref = link.href;
-          link.href = proxyUrl(originalHref);
-        });
+        (function() {
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+          script.onload = function() {
+            eruda.init();
+          };
+          document.body.appendChild(script);
+        })();
       </script>
     </body>`);
 
-    // Send the modified HTML with the proxied URLs
+    // Send the modified HTML with Eruda and proxified URLs
     res.send(html);
   } catch (err) {
     console.error("Error occurred:", err.message);
