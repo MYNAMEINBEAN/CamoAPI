@@ -55,13 +55,13 @@ module.exports = async (req, res) => {
     // Specifically target iframe src URLs and convert them
     html = html.replace(/<iframe[^>]+src="([^"]+)"/g, (match, p1) => {
       const proxiedUrl = convertToEmbedUrl(p1);
-      return `<iframe src="${proxiedUrl}"`;
+      return `<iframe src="${proxiedUrl}" style="border: none;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     });
 
-    // Specifically handle the ytd-player container (if the video is embedded in a <ytd-player> tag)
+    // Replace YouTube player container with an iframe if blocked or error occurs
     html = html.replace(/<ytd-player[^>]+src="([^"]+)"/g, (match, p1) => {
       const proxiedUrl = convertToEmbedUrl(p1);
-      return `<ytd-player src="${proxiedUrl}"`;
+      return `<iframe src="${proxiedUrl}" style="border: none;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     });
 
     // Insert Eruda debugging tool just before the closing </body> tag
