@@ -31,55 +31,77 @@ module.exports = async (req, res) => {
     // Convert arraybuffer to string if it's HTML
     let html = Buffer.from(response.data).toString('utf-8');
 
-    // Function to convert YouTube URLs to embedded version
-    const convertToEmbedUrl = (url) => {
-      const videoIdPattern = /(?:https?:\/\/(?:www\.)?youtube\.com\/(?:shorts\/|watch\?v=))([^"&?\/\s]{11})/;
-      const match = url.match(videoIdPattern);
-      if (match) {
-        return `https://www.youtube-nocookie.com/embed/${match[1]}`;
-      }
-      return url; // Return original URL if it's not a YouTube link
+    // Function to convert a URL into its proxified version
+    const proxifyUrl = (url) => {
+      return `https://www.districtlearning.org/api/youtube/index.js?url=${encodeURIComponent(url)}`;
     };
 
-    // Modify the HTML to convert YouTube URLs in href, src, and iframe src
-    html = html.replace(/href="([^"]+)"/g, (match, p1) => {
-      const proxiedUrl = convertToEmbedUrl(p1);
-      return `href="${proxiedUrl}"`;
-    });
+    // Function to replace URLs in HTML content
+    const replaceAllLinksWithProxy = (html) => {
+      // Replace <a href="...">
+      html = html.replace(/href="([^"]+)"/g, (match, p1) => {
+        return `href="${proxifyUrl(p1)}"`;
+      });
 
-    html = html.replace(/src="([^"]+)"/g, (match, p1) => {
-      const proxiedUrl = convertToEmbedUrl(p1);
-      return `src="${proxiedUrl}"`;
-    });
+      // Replace <script src="...">
+      html = html.replace(/<script[^>]+src="([^"]+)"/g, (match, p1) => {
+        return `<script src="${proxifyUrl(p1)}"`;
+      });
 
-    // Specifically target iframe src URLs and convert them
-    html = html.replace(/<iframe[^>]+src="([^"]+)"/g, (match, p1) => {
-      const proxiedUrl = convertToEmbedUrl(p1);
-      return `<iframe src="${proxiedUrl}" style="border: none;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-    });
+      // Replace <link href="...">
+      html = html.replace(/<link[^>]+href="([^"]+)"/g, (match, p1) => {
+        return `<link href="${proxifyUrl(p1)}"`;
+      });
 
-    // Replace YouTube player container with an iframe if blocked or error occurs
-    html = html.replace(/<ytd-player[^>]+src="([^"]+)"/g, (match, p1) => {
-      const proxiedUrl = convertToEmbedUrl(p1);
-      return `<iframe src="${proxiedUrl}" style="border: none;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-    });
+      // Replace <iframe src="...">
+      html = html.replace(/<iframe[^>]+src="([^"]+)"/g, (match, p1) => {
+        return `<iframe src="${proxifyUrl(p1)}"`;
+      });
 
-    // Insert Eruda debugging tool just before the closing </body> tag
-    html = html.replace(/<\/body>/i, `
-      <script>
-        (function() {
-          var script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-          script.onload = function() {
-            eruda.init();
-          };
-          document.body.appendChild(script);
-        })();
-      </script>
-    </body>`);
+      // Replace background URLs in inline styles (e.g., style="background:url('...')")
+      html = html.replace(/url\(['"]?([^'")]+)['"]?\)/g, (match, p1) => {
+        return `url('${proxifyUrl(p1)}')`;
+      });
 
-    // Send the modified HTML with Eruda and proxified URLs
+      // Replace URLs in data-* attributes (e.g., data-src, data-url, etc.)
+      html = html.replace(/data-([^=]+)="([^"]+)"/g, (match, p1, p2) => {
+        return `data-${p1}="${proxifyUrl(p2)}"`;
+      });
+
+      return html;
+    };
+
+    // Replace all links in the HTML with proxified URLs
+    html = replaceAllLinksWithProxy(html);
+
+    // Function to replace yt-player-error-message-renderer with iframe
+    const replaceErrorMessageWithIframe = (iframeSrc) => {
+      const errorMessageRenderer = html.match(/<yt-player-error-message-renderer[^>]*>[\s\S]*?<\/yt-player-error-message-renderer>/);
+
+      if (errorMessageRenderer) {
+        // Create the iframe element HTML code
+        const iframe = `
+          <iframe src="${iframeSrc}" style="width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        `;
+
+        // Replace the error message container with the iframe
+        html = html.replace(errorMessageRenderer[0], iframe);
+      } else {
+        console.error('yt-player-error-message-renderer not found');
+      }
+    };
+
+    // Extract the video ID from the current URL in the browser
+    const videoId = new URL(decodedUrl).searchParams.get('v') || decodedUrl.split('/shorts/')[1];
+
+    if (videoId) {
+      const iframeSrc = `https://www.youtube.com/embed/${videoId}`;
+      replaceErrorMessageWithIframe(iframeSrc);
+    }
+
+    // Send the modified HTML back to the client
     res.send(html);
+
   } catch (err) {
     console.error("Error occurred:", err.message);
     res.status(500).json({ error: 'Internal Server Error' });
