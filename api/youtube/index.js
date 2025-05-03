@@ -67,37 +67,10 @@ module.exports = async (req, res) => {
 
     const videoId = new URL(decodedUrl).searchParams.get('v') || decodedUrl.split('/shorts/')[1];
 
-    // Function to proxify links
-    const proxifyLinks = (html) => {
-      const proxifyUrl = (url) => {
-        const proxifiedLink = `/API/YouTube/index.js?url=${encodeURIComponent(url)}`;
-        console.log("Proxifying URL:", url, "to", proxifiedLink); // Log the proxified URL
-        return proxifiedLink;
-      };
-
-      // Replace all `href` and `src` attributes with proxified links
-      html = html.replace(/(href|src)="([^"]+)"/g, (match, attribute, link) => {
-        // Skip proxifying links that are already using the API (to prevent recursion)
-        if (link.includes('/API/YouTube/index.js')) {
-          return match;
-        }
-        
-        const proxifiedLink = proxifyUrl(link);
-        return `${attribute}="${proxifiedLink}"`;
-      });
-
-      return html;
-    };
-
-    // If there is a videoId, inject iframe replacement
     if (videoId) {
       html = injectIframeReplacementScript(html, videoId);
     }
 
-    // Proxify all href and src links
-    html = proxifyLinks(html);
-
-    // Inject Eruda for debugging
     html = injectEruda(html);
 
     res.send(html);
