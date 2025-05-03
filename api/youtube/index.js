@@ -37,11 +37,11 @@ module.exports = async (req, res) => {
       return html.replace('</body>', `${erudaScript}</body>`);
     };
 
-    // Function to inject client-side iframe replacement script
+    // Function to inject client-side iframe replacement script (after DOM loads)
     const injectIframeReplacementScript = (html, videoId) => {
       const script = `
         <script>
-          (function () {
+          document.addEventListener('DOMContentLoaded', function () {
             const iframe = document.createElement('iframe');
             iframe.src = 'https://www.youtube.com/embed/${videoId}';
             iframe.style = 'width:100%; height:100%; border:none; position:absolute; top:0; left:0; z-index:1;';
@@ -55,23 +55,20 @@ module.exports = async (req, res) => {
             } else {
               console.warn("yt-player-error-message-renderer not found.");
             }
-          })();
+          });
         </script>
       `;
       return html.replace('</body>', `${script}</body>`);
     };
 
-    // Extract the video ID from the URL
     const videoId = new URL(decodedUrl).searchParams.get('v') || decodedUrl.split('/shorts/')[1];
 
     if (videoId) {
       html = injectIframeReplacementScript(html, videoId);
     }
 
-    // Inject Eruda for debugging
     html = injectEruda(html);
 
-    // Send the modified HTML
     res.send(html);
 
   } catch (err) {
