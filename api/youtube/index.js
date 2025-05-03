@@ -28,7 +28,6 @@ module.exports = async (req, res) => {
 
     let html = Buffer.from(response.data).toString('utf-8');
 
-    // Function to inject Eruda
     const injectEruda = (html) => {
       const erudaScript = `
         <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -36,8 +35,6 @@ module.exports = async (req, res) => {
       `;
       return html.replace('</body>', `${erudaScript}</body>`);
     };
-
-    // Function to inject iframe replacement using MutationObserver
     const injectIframeReplacementScript = (html, videoId) => {
       const script = `
         <script>
