@@ -30,16 +30,16 @@ module.exports = async (req, res) => {
 
     // Function to inject Eruda
     const injectEruda = (html) => {
-      const erudaScript = 
+      const erudaScript = `
         <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
         <script>eruda.init();</script>
-      ;
-      return html.replace('</body>', ${erudaScript}</body>);
+      `;
+      return html.replace('</body>', `${erudaScript}</body>`);
     };
 
     // Function to inject iframe replacement using MutationObserver
     const injectIframeReplacementScript = (html, videoId) => {
-      const script = 
+      const script = `
         <script>
           (function () {
             const videoId = "${videoId}";
@@ -61,8 +61,8 @@ module.exports = async (req, res) => {
             observer.observe(document.body, { childList: true, subtree: true });
           })();
         </script>
-      ;
-      return html.replace('</body>', ${script}</body>);
+      `;
+      return html.replace('</body>', `${script}</body>`);
     };
 
     const videoId = new URL(decodedUrl).searchParams.get('v') || decodedUrl.split('/shorts/')[1];
