@@ -11,7 +11,6 @@ module.exports = async (req, res) => {
     const decodedUrl = decodeURIComponent(url.trim());
     console.log("Fetching URL:", decodedUrl);
 
-    // Fetch the URL using Axios with arraybuffer response type
     const response = await axios.get(decodedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
@@ -23,12 +22,10 @@ module.exports = async (req, res) => {
     const contentType = response.headers['content-type'] || 'text/html';
     res.setHeader('Content-Type', contentType);
 
-    // If the content is not HTML, send it directly
     if (!contentType.includes('text/html')) {
       return res.send(response.data);
     }
 
-    // Convert arraybuffer to string if it's HTML
     let html = Buffer.from(response.data).toString('utf-8');
 
     // Function to inject Eruda
@@ -40,26 +37,35 @@ module.exports = async (req, res) => {
       return html.replace('</body>', `${erudaScript}</body>`);
     };
 
-    // Function to replace yt-player-error-message-renderer with iframe
-    const replaceErrorMessageWithIframe = (iframeSrc) => {
-      const errorMessageRenderer = html.match(/<yt-player-error-message-renderer[^>]*>[\s\S]*?<\/yt-player-error-message-renderer>/);
+    // Function to inject client-side iframe replacement script
+    const injectIframeReplacementScript = (html, videoId) => {
+      const script = `
+        <script>
+          (function () {
+            const iframe = document.createElement('iframe');
+            iframe.src = 'https://www.youtube.com/embed/${videoId}';
+            iframe.style = 'width:100%; height:100%; border:none; position:absolute; top:0; left:0; z-index:1;';
+            iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
 
-      if (errorMessageRenderer) {
-        const iframe = `
-          <iframe src="${iframeSrc}" style="width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        `;
-        html = html.replace(errorMessageRenderer[0], iframe);
-      } else {
-        console.error('yt-player-error-message-renderer not found');
-      }
+            const target = document.querySelector('yt-player-error-message-renderer');
+            if (target) {
+              target.replaceWith(iframe);
+              console.log("Replaced yt-player-error-message-renderer with iframe.");
+            } else {
+              console.warn("yt-player-error-message-renderer not found.");
+            }
+          })();
+        </script>
+      `;
+      return html.replace('</body>', `${script}</body>`);
     };
 
     // Extract the video ID from the URL
     const videoId = new URL(decodedUrl).searchParams.get('v') || decodedUrl.split('/shorts/')[1];
 
     if (videoId) {
-      const iframeSrc = `https://www.youtube.com/embed/${videoId}`;
-      replaceErrorMessageWithIframe(iframeSrc);
+      html = injectIframeReplacementScript(html, videoId);
     }
 
     // Inject Eruda for debugging
