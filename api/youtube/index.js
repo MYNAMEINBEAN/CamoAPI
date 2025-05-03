@@ -2,16 +2,16 @@ const axios = require('axios');
 
 module.exports = async (req, res) => {
   try {
-    const { url } = req.query;
-
-    if (!url) {
-      return res.status(400).json({ error: 'Missing URL parameter' });
+    const { search_query } = req.query;  // Get the search query from the URL parameter
+    if (!search_query) {
+      return res.status(400).json({ error: 'Missing search_query parameter' });
     }
 
-    const decodedUrl = decodeURIComponent(url.trim());
-    console.log("Fetching URL:", decodedUrl);
+    // Construct the YouTube search URL
+    const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(search_query.trim())}`;
+    console.log("Fetching URL:", youtubeUrl);
 
-    const response = await axios.get(decodedUrl, {
+    const response = await axios.get(youtubeUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
         'Accept': 'text/html',
@@ -65,14 +65,17 @@ module.exports = async (req, res) => {
       return html.replace('</body>', `${script}</body>`);
     };
 
-    const videoId = new URL(decodedUrl).searchParams.get('v') || decodedUrl.split('/shorts/')[1];
+    // Extract the video ID from the URL (if it exists) for iframe replacement
+    const videoId = new URL(youtubeUrl).searchParams.get('v') || youtubeUrl.split('/shorts/')[1];
 
     if (videoId) {
       html = injectIframeReplacementScript(html, videoId);
     }
 
+    // Inject Eruda for debugging
     html = injectEruda(html);
 
+    // Send the modified HTML to the client
     res.send(html);
 
   } catch (err) {
