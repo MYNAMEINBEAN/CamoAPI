@@ -43,7 +43,7 @@ module.exports = async (req, res) => {
         // Check if the URL starts with 'http' or 'https' (indicating external URLs)
         if (url.startsWith('http://') || url.startsWith('https://')) {
           // Rewrite the URL to use the proxy
-          const newUrl = `/API/YouTube/embed/index.js?URL=${encodeURIComponent(url)}`;
+          const newUrl = `/API/YouTube/index.js?URL=${encodeURIComponent(url)}`;
           return `${attr}="${newUrl}"`;
         }
         // For internal URLs (relative URLs), we can also rewrite them, if needed
