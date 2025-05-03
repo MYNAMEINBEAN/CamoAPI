@@ -37,25 +37,29 @@ module.exports = async (req, res) => {
       return html.replace('</body>', `${erudaScript}</body>`);
     };
 
-    // Function to inject client-side iframe replacement script (after DOM loads)
+    // Function to inject iframe replacement using MutationObserver
     const injectIframeReplacementScript = (html, videoId) => {
       const script = `
         <script>
-          document.addEventListener('DOMContentLoaded', function () {
+          (function () {
+            const videoId = "${videoId}";
             const iframe = document.createElement('iframe');
-            iframe.src = 'https://www.youtube.com/embed/${videoId}';
+            iframe.src = 'https://www.youtube.com/embed/' + videoId;
             iframe.style = 'width:100%; height:100%; border:none; position:absolute; top:0; left:0; z-index:1;';
             iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
             iframe.allowFullscreen = true;
 
-            const target = document.querySelector('yt-player-error-message-renderer');
-            if (target) {
-              target.replaceWith(iframe);
-              console.log("Replaced yt-player-error-message-renderer with iframe.");
-            } else {
-              console.warn("yt-player-error-message-renderer not found.");
-            }
-          });
+            const observer = new MutationObserver((mutations, obs) => {
+              const target = document.querySelector('yt-player-error-message-renderer');
+              if (target) {
+                target.replaceWith(iframe);
+                console.log("Replaced yt-player-error-message-renderer with iframe.");
+                obs.disconnect();
+              }
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+          })();
         </script>
       `;
       return html.replace('</body>', `${script}</body>`);
