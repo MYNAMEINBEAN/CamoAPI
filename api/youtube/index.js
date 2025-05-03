@@ -2,16 +2,16 @@ const axios = require('axios');
 
 module.exports = async (req, res) => {
   try {
-    const { search_query } = req.query;  // Get the search query from the URL parameter
-    if (!search_query) {
-      return res.status(400).json({ error: 'Missing search_query parameter' });
+    const { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({ error: 'Missing URL parameter' });
     }
 
-    // Construct the YouTube search URL
-    const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(search_query.trim())}`;
-    console.log("Fetching URL:", youtubeUrl);
+    const decodedUrl = decodeURIComponent(url.trim());
+    console.log("Fetching URL:", decodedUrl);
 
-    const response = await axios.get(youtubeUrl, {
+    const response = await axios.get(decodedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
         'Accept': 'text/html',
@@ -30,16 +30,16 @@ module.exports = async (req, res) => {
 
     // Function to inject Eruda
     const injectEruda = (html) => {
-      const erudaScript = `
+      const erudaScript = 
         <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
         <script>eruda.init();</script>
-      `;
-      return html.replace('</body>', `${erudaScript}</body>`);
+      ;
+      return html.replace('</body>', ${erudaScript}</body>);
     };
 
     // Function to inject iframe replacement using MutationObserver
     const injectIframeReplacementScript = (html, videoId) => {
-      const script = `
+      const script = 
         <script>
           (function () {
             const videoId = "${videoId}";
@@ -61,21 +61,18 @@ module.exports = async (req, res) => {
             observer.observe(document.body, { childList: true, subtree: true });
           })();
         </script>
-      `;
-      return html.replace('</body>', `${script}</body>`);
+      ;
+      return html.replace('</body>', ${script}</body>);
     };
 
-    // Extract the video ID from the URL (if it exists) for iframe replacement
-    const videoId = new URL(youtubeUrl).searchParams.get('v') || youtubeUrl.split('/shorts/')[1];
+    const videoId = new URL(decodedUrl).searchParams.get('v') || decodedUrl.split('/shorts/')[1];
 
     if (videoId) {
       html = injectIframeReplacementScript(html, videoId);
     }
 
-    // Inject Eruda for debugging
     html = injectEruda(html);
 
-    // Send the modified HTML to the client
     res.send(html);
 
   } catch (err) {
