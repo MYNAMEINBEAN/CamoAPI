@@ -71,15 +71,6 @@ module.exports = async (req, res) => {
       html = injectIframeReplacementScript(html, videoId);
     }
 
-    // Replace all src and href attributes with proxied link
-    const replaceWithProxy = (match, attribute, url) => {
-      const proxiedUrl = `/API/YouTube/index.js?url=${encodeURIComponent(url)}`;
-      return `${attribute}="${proxiedUrl}"`;
-    };
-
-    // Replace src and href links with proxied link
-    html = html.replace(/(src|href)="(http[^"]+)"/g, replaceWithProxy);
-
     html = injectEruda(html);
 
     res.send(html);
