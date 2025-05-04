@@ -1,5 +1,5 @@
 const axios = require('axios');
-const url = require('url'); // To handle and resolve relative URLs
+const url = require('url'); // To resolve relative URLs properly
 
 module.exports = async (req, res) => {
   try {
@@ -29,16 +29,17 @@ module.exports = async (req, res) => {
 
     let html = Buffer.from(response.data).toString('utf-8');
 
-    // Function to inject the dynamic script to load resources via proxy
+    // Function to inject the proxify script for dynamically loading all resources
     const injectProxifyScript = (html) => {
       const proxifyScript = `
         <script>
           (function() {
+            // Function to create proxified URL
             function proxifyUrl(url) {
-              return '/API/YouTube/youtube/index.js?url=' + encodeURIComponent(url);
+              return '/API/YouTube/index.js?url=' + encodeURIComponent(url);
             }
 
-            // Function to replace all the asset URLs with proxified URLs
+            // Function to replace all the resource URLs with proxified URLs
             function proxifyResources() {
               const resources = [
                 { tag: 'script', attribute: 'src' },
