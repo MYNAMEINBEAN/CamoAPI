@@ -23,6 +23,12 @@ module.exports = async (req, res) => {
     const contentType = response.headers['content-type'] || 'text/html';
     res.setHeader('Content-Type', contentType);
 
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+
     if (!contentType.includes('text/html')) {
       return res.send(response.data);
     }
