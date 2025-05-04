@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const cheerio = require('cheerio'); // Add cheerio for parsing HTML
+const cheerio = require('cheerio');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -16,8 +16,8 @@ app.options('*', (req, res) => {
   res.status(200).end();
 });
 
-// Proxy request handler for YouTube embeds
-app.get('/api/youtube/embed/index.js', async (req, res) => {
+// Proxy request handler for YouTube embeds at /API/youtube/embed/index.js
+app.get('/API/youtube/embed/index.js', async (req, res) => {
   const targetUrl = req.query.url;
 
   if (!targetUrl) {
@@ -47,28 +47,47 @@ app.get('/api/youtube/embed/index.js', async (req, res) => {
     $('img').each((i, el) => {
       const src = $(el).attr('src');
       if (src && !src.startsWith('http')) {
-        $(el).attr('src', `/api/proxy?url=${encodeURIComponent(src)}`);
+        $(el).attr('src', `/API/proxy?url=${encodeURIComponent(src)}`);
       }
     });
 
     $('a').each((i, el) => {
       const href = $(el).attr('href');
       if (href && !href.startsWith('http')) {
-        $(el).attr('href', `/api/proxy?url=${encodeURIComponent(href)}`);
+        $(el).attr('href', `/API/proxy?url=${encodeURIComponent(href)}`);
       }
     });
 
     $('video').each((i, el) => {
       const poster = $(el).attr('poster');
       if (poster && !poster.startsWith('http')) {
-        $(el).attr('poster', `/api/proxy?url=${encodeURIComponent(poster)}`);
+        $(el).attr('poster', `/API/proxy?url=${encodeURIComponent(poster)}`);
       }
 
       const src = $(el).attr('src');
       if (src && !src.startsWith('http')) {
-        $(el).attr('src', `/api/proxy?url=${encodeURIComponent(src)}`);
+        $(el).attr('src', `/API/proxy?url=${encodeURIComponent(src)}`);
       }
     });
+
+    // Modify all <form> elements' action attributes
+    $('form').each((i, el) => {
+      const action = $(el).attr('action');
+      if (action && !action.startsWith('http')) {
+        $(el).attr('action', `/API/proxy?url=${encodeURIComponent(action)}`);
+      }
+    });
+
+    // Check if the request is from a mobile device (based on the User-Agent)
+    const isMobile = /mobile/i.test(req.get('User-Agent'));
+
+    // If it's a mobile device, inject the Eruda script
+    if (isMobile) {
+      $('body').append(`
+        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+        <script>eruda.init();</script>
+      `);
+    }
 
     // Send the modified HTML back
     res.send($.html());
@@ -79,8 +98,8 @@ app.get('/api/youtube/embed/index.js', async (req, res) => {
   }
 });
 
-// Proxy handler for other resources (images, videos, etc.)
-app.get('/api/proxy', async (req, res) => {
+// Proxy handler for other resources (images, videos, etc.) at /API/proxy
+app.get('/API/proxy', async (req, res) => {
   const targetUrl = req.query.url;
 
   if (!targetUrl) {
