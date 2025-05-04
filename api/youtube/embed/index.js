@@ -1,14 +1,15 @@
 const axios = require('axios');
+const url = require('url'); // To handle and resolve relative URLs
 
 module.exports = async (req, res) => {
   try {
-    const { url } = req.query;
+    const { url: rawUrl } = req.query;
 
-    if (!url) {
+    if (!rawUrl) {
       return res.status(400).json({ error: 'Missing URL parameter' });
     }
 
-    const decodedUrl = decodeURIComponent(url.trim());
+    const decodedUrl = decodeURIComponent(rawUrl.trim());
     console.log("Fetching URL:", decodedUrl);
 
     const response = await axios.get(decodedUrl, {
@@ -28,46 +29,61 @@ module.exports = async (req, res) => {
 
     let html = Buffer.from(response.data).toString('utf-8');
 
-    // Helper function to update URLs in various tags
-    const proxifyAllTags = (html) => {
-      // Regex to match and proxify the src or href attributes for various tags
-      const regexPatterns = [
-        { tag: 'script', attribute: 'src' },
-        { tag: 'link', attribute: 'href' },
-        { tag: 'img', attribute: 'src' },
-        { tag: 'a', attribute: 'href' },
-        { tag: 'iframe', attribute: 'src' },
-        { tag: 'form', attribute: 'action' }
-      ];
-
-      regexPatterns.forEach(({ tag, attribute }) => {
-        const regex = new RegExp(`<${tag}\\s+[^>]*${attribute}=["'](.*?)["'][^>]*>`, 'g');
-        html = html.replace(regex, (match, urlValue) => {
-          const proxifiedUrl = `/API/YouTube/youtube/index.js?url=${encodeURIComponent(urlValue)}`;
-          return match.replace(urlValue, proxifiedUrl);
-        });
-      });
-
-      return html;
-    };
-
-    // Inject a custom script tag at the bottom of the body
-    const injectCustomScript = (html) => {
-      const customScript = `
+    // Function to inject the dynamic script to load resources via proxy
+    const injectProxifyScript = (html) => {
+      const proxifyScript = `
         <script>
-          // Your custom JavaScript code here
-          console.log("Custom script loaded at the bottom!");
+          (function() {
+            function proxifyUrl(url) {
+              return '/API/YouTube/youtube/index.js?url=' + encodeURIComponent(url);
+            }
+
+            // Function to replace all the asset URLs with proxified URLs
+            function proxifyResources() {
+              const resources = [
+                { tag: 'script', attribute: 'src' },
+                { tag: 'link', attribute: 'href' },
+                { tag: 'img', attribute: 'src' },
+                { tag: 'a', attribute: 'href' },
+                { tag: 'iframe', attribute: 'src' },
+                { tag: 'form', attribute: 'action' }
+              ];
+
+              resources.forEach(({ tag, attribute }) => {
+                const elements = document.querySelectorAll(tag);
+                elements.forEach(element => {
+                  const urlValue = element.getAttribute(attribute);
+                  if (urlValue) {
+                    const proxifiedUrl = proxifyUrl(urlValue);
+                    element.setAttribute(attribute, proxifiedUrl);
+                  }
+                });
+              });
+            }
+
+            // Wait for the document to be fully loaded, then proxify resources
+            window.addEventListener('load', proxifyResources);
+          })();
         </script>
       `;
-      return html.replace('</body>', `${customScript}</body>`);
+      return html.replace('</body>', `${proxifyScript}</body>`);
     };
 
-    // Apply the proxification to all relevant tags
-    html = proxifyAllTags(html);
+    // Inject the proxify script into the HTML
+    html = injectProxifyScript(html);
 
-    // Inject the custom script tag at the bottom of the body
-    html = injectCustomScript(html);
+    // Inject Eruda script for debugging (optional)
+    const injectEruda = (html) => {
+      const erudaScript = `
+        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+        <script>eruda.init();</script>
+      `;
+      return html.replace('</body>', `${erudaScript}</body>`);
+    };
 
+    html = injectEruda(html);
+
+    // Send the modified HTML back
     res.send(html);
 
   } catch (err) {
