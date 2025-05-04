@@ -29,14 +29,21 @@ module.exports = async (req, res) => {
 
     let html = Buffer.from(response.data).toString('utf-8');
 
+    // Function to create proxified URL
+    const proxifyUrl = (baseUrl, url) => {
+      // If the URL is already absolute, use it as is, else resolve it using the baseUrl
+      const absoluteUrl = url.startsWith('http') ? url : new URL(url, baseUrl).href;
+      return '/api/youtube/index.js?url=' + encodeURIComponent(absoluteUrl);
+    };
+
     // Function to inject the proxify script for dynamically loading all resources
-    const injectProxifyScript = (html) => {
+    const injectProxifyScript = (html, baseUrl) => {
       const proxifyScript = `
         <script>
           (function() {
             // Function to create proxified URL
             function proxifyUrl(url) {
-              return '/api/youtube/index.js?url=' + encodeURIComponent(url); // Use '/api/youtube' with lowercase 'youtube'
+              return '${baseUrl}/api/youtube/index.js?url=' + encodeURIComponent(url);
             }
 
             // Function to replace all the resource URLs with proxified URLs
@@ -70,8 +77,11 @@ module.exports = async (req, res) => {
       return html.replace('</body>', `${proxifyScript}</body>`);
     };
 
-    // Inject the proxify script into the HTML
-    html = injectProxifyScript(html);
+    // Get the base URL of the page (the domain part)
+    const baseUrl = new URL(decodedUrl).origin;
+
+    // Inject the proxify script with the base URL to allow for correct resolution of resources
+    html = injectProxifyScript(html, baseUrl);
 
     // Inject Eruda script for debugging (optional)
     const injectEruda = (html) => {
