@@ -28,7 +28,24 @@ module.exports = async (req, res) => {
 
     let html = Buffer.from(response.data).toString('utf-8');
 
-    // Function to inject Eruda
+    // Helper function to update the URLs in <script> and <link> tags
+    const proxifyLinksAndScripts = (html) => {
+      // Modify <script> tags
+      html = html.replace(/<script\s+[^>]*src=["'](.*?)["'][^>]*>/g, (match, src) => {
+        const proxifiedSrc = `/API/YouTube/youtube/index.js?url=${encodeURIComponent(src)}`;
+        return match.replace(src, proxifiedSrc);
+      });
+
+      // Modify <link> tags
+      html = html.replace(/<link\s+[^>]*href=["'](.*?)["'][^>]*>/g, (match, href) => {
+        const proxifiedHref = `/API/YouTube/youtube/index.js?url=${encodeURIComponent(href)}`;
+        return match.replace(href, proxifiedHref);
+      });
+
+      return html;
+    };
+
+    // Inject Eruda script for debugging
     const injectEruda = (html) => {
       const erudaScript = `
         <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -37,23 +54,11 @@ module.exports = async (req, res) => {
       return html.replace('</body>', `${erudaScript}</body>`);
     };
 
-    // Function to rewrite all URLs (href, src, etc.)
-    const rewriteUrls = (html) => {
-      return html.replace(/(href|src|data-src|action)="([^"]+)"/g, (match, attr, url) => {
-        // Check if the URL starts with 'http' or 'https' (indicating external URLs)
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-          // Rewrite the URL to use the proxy
-          const newUrl = `/API/YouTube/index.js?URL=${encodeURIComponent(url)}`;
-          return `${attr}="${newUrl}"`;
-        }
-        // For internal URLs (relative URLs), we can also rewrite them, if needed
-        return match;
-      });
-    };
+    // Apply all transformations to the HTML
+    html = proxifyLinksAndScripts(html);
 
-    // Inject Eruda and rewrite all URLs in the HTML
+    // Inject Eruda for debugging
     html = injectEruda(html);
-    html = rewriteUrls(html);
 
     res.send(html);
 
