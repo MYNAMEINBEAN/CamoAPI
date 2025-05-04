@@ -31,10 +31,15 @@ module.exports = async (req, res) => {
 
     // Function to create proxified URL
     const proxifyUrl = (baseUrl, resourceUrl) => {
-      // If the resource URL is absolute, no change, otherwise combine with baseUrl
-      const absoluteUrl = resourceUrl.startsWith('http') 
-        ? resourceUrl 
-        : new URL(resourceUrl, baseUrl).href;
+      let absoluteUrl;
+
+      // If the URL is absolute (contains 'http'), use it as it is
+      if (resourceUrl.startsWith('http://') || resourceUrl.startsWith('https://')) {
+        absoluteUrl = resourceUrl;
+      } else {
+        // If it's a relative URL, combine it with the base URL
+        absoluteUrl = new URL(resourceUrl, baseUrl).href;
+      }
 
       // Return the proxified URL format
       return `/api/youtube/index.js?url=${encodeURIComponent(absoluteUrl)}`;
@@ -47,7 +52,18 @@ module.exports = async (req, res) => {
           (function() {
             // Function to create proxified URL
             function proxifyUrl(url) {
-              return '${baseUrl}/api/youtube/index.js?url=' + encodeURIComponent(url);
+              const baseUrl = '${baseUrl}';
+              let absoluteUrl;
+
+              // If the resource URL is absolute, use it as it is
+              if (url.startsWith('http://') || url.startsWith('https://')) {
+                absoluteUrl = url;
+              } else {
+                // If it's a relative URL, combine it with the base URL
+                absoluteUrl = new URL(url, baseUrl).href;
+              }
+
+              return '/api/youtube/index.js?url=' + encodeURIComponent(absoluteUrl);
             }
 
             // Function to replace all the resource URLs with proxified URLs
