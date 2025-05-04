@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
           (function() {
             // Function to create proxified URL
             function proxifyUrl(url) {
-              return '/API/YouTube/index.js?url=' + encodeURIComponent(url);
+              return '/api/youtube/index.js?url=' + encodeURIComponent(url); // Use '/api/youtube' with lowercase 'youtube'
             }
 
             // Function to replace all the resource URLs with proxified URLs
