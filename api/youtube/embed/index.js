@@ -30,10 +30,14 @@ module.exports = async (req, res) => {
     let html = Buffer.from(response.data).toString('utf-8');
 
     // Function to create proxified URL
-    const proxifyUrl = (baseUrl, url) => {
-      // If the URL is already absolute, use it as is, else resolve it using the baseUrl
-      const absoluteUrl = url.startsWith('http') ? url : new URL(url, baseUrl).href;
-      return '/api/youtube/index.js?url=' + encodeURIComponent(absoluteUrl);
+    const proxifyUrl = (baseUrl, resourceUrl) => {
+      // If the resource URL is absolute, no change, otherwise combine with baseUrl
+      const absoluteUrl = resourceUrl.startsWith('http') 
+        ? resourceUrl 
+        : new URL(resourceUrl, baseUrl).href;
+
+      // Return the proxified URL format
+      return `/api/youtube/index.js?url=${encodeURIComponent(absoluteUrl)}`;
     };
 
     // Function to inject the proxify script for dynamically loading all resources
