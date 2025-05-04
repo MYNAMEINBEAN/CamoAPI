@@ -28,37 +28,45 @@ module.exports = async (req, res) => {
 
     let html = Buffer.from(response.data).toString('utf-8');
 
-    // Helper function to update the URLs in <script> and <link> tags
-    const proxifyLinksAndScripts = (html) => {
-      // Modify <script> tags
-      html = html.replace(/<script\s+[^>]*src=["'](.*?)["'][^>]*>/g, (match, src) => {
-        const proxifiedSrc = `/API/YouTube/youtube/index.js?url=${encodeURIComponent(src)}`;
-        return match.replace(src, proxifiedSrc);
-      });
+    // Helper function to update URLs in various tags
+    const proxifyAllTags = (html) => {
+      // Regex to match and proxify the src or href attributes for various tags
+      const regexPatterns = [
+        { tag: 'script', attribute: 'src' },
+        { tag: 'link', attribute: 'href' },
+        { tag: 'img', attribute: 'src' },
+        { tag: 'a', attribute: 'href' },
+        { tag: 'iframe', attribute: 'src' },
+        { tag: 'form', attribute: 'action' }
+      ];
 
-      // Modify <link> tags
-      html = html.replace(/<link\s+[^>]*href=["'](.*?)["'][^>]*>/g, (match, href) => {
-        const proxifiedHref = `/API/YouTube/youtube/index.js?url=${encodeURIComponent(href)}`;
-        return match.replace(href, proxifiedHref);
+      regexPatterns.forEach(({ tag, attribute }) => {
+        const regex = new RegExp(`<${tag}\\s+[^>]*${attribute}=["'](.*?)["'][^>]*>`, 'g');
+        html = html.replace(regex, (match, urlValue) => {
+          const proxifiedUrl = `/API/YouTube/youtube/index.js?url=${encodeURIComponent(urlValue)}`;
+          return match.replace(urlValue, proxifiedUrl);
+        });
       });
 
       return html;
     };
 
-    // Inject Eruda script for debugging
-    const injectEruda = (html) => {
-      const erudaScript = `
-        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-        <script>eruda.init();</script>
+    // Inject a custom script tag at the bottom of the body
+    const injectCustomScript = (html) => {
+      const customScript = `
+        <script>
+          // Your custom JavaScript code here
+          console.log("Custom script loaded at the bottom!");
+        </script>
       `;
-      return html.replace('</body>', `${erudaScript}</body>`);
+      return html.replace('</body>', `${customScript}</body>`);
     };
 
-    // Apply all transformations to the HTML
-    html = proxifyLinksAndScripts(html);
+    // Apply the proxification to all relevant tags
+    html = proxifyAllTags(html);
 
-    // Inject Eruda for debugging
-    html = injectEruda(html);
+    // Inject the custom script tag at the bottom of the body
+    html = injectCustomScript(html);
 
     res.send(html);
 
