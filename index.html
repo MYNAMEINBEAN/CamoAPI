@@ -1,84 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CamoAPI</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rainbow Particle Portal</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #0c0c0c;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    #tsparticles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    .btn-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      height: 100%;
+      z-index: 1;
+      position: relative;
+    }
+
+    .btn {
+      position: relative;
+      padding: 15px 40px;
+      font-size: 20px;
+      color: white;
+      background: linear-gradient(45deg, #ff0080, #7928ca);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn:hover {
+      animation: glitch 300ms infinite;
+      box-shadow: 0 0 10px #ff0080, 0 0 20px #7928ca;
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
+  </style>
 </head>
 <body>
-    <div class="content">
-        <div class="typewriter">
-            <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
-            <h1>
-                CamoAPI :  
-                
-                <span id="typingtext">
-                </span>
-            </h1>
-            <script>
-                var typed = new Typed('#typingtext', {
-                strings: [`"it's insane" - Petezah`, '"yeah its nice" - | Oreo |', '"How bruh" - RHW', '"it loads so fast tho" - Petezah'],
-                typeSpeed: 100,
-                backSpeed: 100,
-                backDelay: 100,
-                loop: true,
-                loopCount: Infinity,
-                startDelay: 500,
-                backDelay: 2500,
-                cursorChar: '|',
-                });
-            </script>
-        </div>
-        <div class="search">
-            <div class="google box">
-                <h1>Google Support</h1>
-                <p>Search Google</p>
-                <form id="customGoogleForm">
-                    <input type="text" id="googlesearch" placeholder="Search Google" required />
-                </form>                
-            </div>
-            <div class="images box">
-                <h1>Image Support</h1>
-                <p>Images</p>
-                <div class="image-container">
-                    <img alt="not working at expected" src="/API/index.js?url=https://ikozmik.com/Content/Images/uploaded/its-free-featured.jpg">
-                    <img alt="not working at expected" src="/API/index.js?url=https://www.psdstack.com/wp-content/uploads/2019/08/copyright-free-images.jpg">
-                </div>
-            </div>
-            <div class="images box">
-                <h1>Try Now</h1>
-                <p>Search a URL</p>
-                <form id="customURLForm">
-                    <input type="text" id="urlsearch" placeholder="Enter a full URL" required />
-                </form>                
-            </div>
-            <div class="github box">
-                <h1>Try Now</h1>
-                <p><a href="https://github.com/CamouflageNetwork/CamoAPI/">https://github.com/CamouflageNetwork/CamoAPI/</a></p>             
-            </div>
-        </div>
-    </div>
+
+<div id="tsparticles"></div>
+
+<div class="btn-container">
+  <button class="btn" onclick="navigate('play.html')">🎮 Games</button>
+  <button class="btn" onclick="navigate('search.html')">🔍 Google Search</button>
+  <button class="btn" onclick="navigate('url.html')">🌐 Enter URL</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+<script>
+  tsParticles.load("tsparticles", {
+    background: {
+      color: { value: "#0c0c0c" }
+    },
+    particles: {
+      number: { value: 100, density: { enable: true, area: 800 } },
+      color: {
+        value: { h: 0, s: 0, l: 100 },
+        animation: {
+          h: { enable: true, speed: 50, sync: false },
+          s: { enable: true, speed: 10, sync: false }
+        }
+      },
+      shape: { type: "circle" },
+      opacity: { value: 0.6 },
+      size: { value: 2, random: true },
+      links: {
+        enable: true,
+        distance: 150,
+        color: "#ffffff",
+        opacity: 0.2,
+        width: 1
+      },
+      move: {
+        enable: true,
+        speed: 1.5,
+        direction: "none",
+        outModes: { default: "out" }
+      }
+    }, // <--- COMMA WAS MISSING HERE
+    interactivity: {
+      events: {
+        onHover: { enable: true, mode: "repulse" },
+        onClick: { enable: true, mode: "push" }
+      },
+      modes: {
+        repulse: { distance: 100 },
+        push: { quantity: 4 }
+      }
+    },
+    detectRetina: true
+  });
+
+  function navigate(page) {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const currentDir = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+    window.location.href = currentDir + page;
+  }
+</script>
+
 </body>
 </html>
-<script>
-    document.getElementById('customGoogleForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const input = document.getElementById('googlesearch');
-        const query = encodeURIComponent(input.value.trim());
-        if (query) {
-            const proxiedURL = `/API/index.js?url=https://www.google.com/search?q=${query}`;
-            window.location.href = proxiedURL;
-        }
-    });
-    document.getElementById('customURLForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const input = document.getElementById('urlsearch');
-        const rawUrl = input.value.trim();
-        if (rawUrl) {
-            const encodedUrl = encodeURIComponent(rawUrl);
-            const finalUrl = `/API/index.js?url=${encodedUrl}`;
-            window.location.href = finalUrl;
-        }
-    });
-</script>
