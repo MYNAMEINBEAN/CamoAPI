@@ -52,7 +52,7 @@
         // Ensure it's a valid-looking URL
         if (rawUrl.length > 0) {
           const encodedUrl = encodeURIComponent(rawUrl);
-          const finalUrl = `/API/ndex.js?url=${encodedUrl}`;
+          const finalUrl = `/API/index.js?url=${encodedUrl}`;
           window.location.href = finalUrl;
         } else {
           alert("Please enter a valid URL.");
