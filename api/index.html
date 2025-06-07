@@ -1,0 +1,25 @@
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const replacements = {
+        'a': 'а', // Cyrillic a
+        'c': 'с', // Cyrillic c
+        'e': 'е', // Cyrillic e
+        'i': 'і', // Cyrillic i
+        'o': 'ο', // Greek omicron
+        'u': 'υ'  // Greek upsilon
+      };
+
+      function replaceText(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          node.textContent = node.textContent.replace(/[aceiou]/g, char => replacements[char] || char);
+        } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
+          for (let child of node.childNodes) {
+            replaceText(child);
+          }
+        }
+      }
+
+      replaceText(document.body);
+    });
+  </script>
+<script src="api/index.js" defer></script>
