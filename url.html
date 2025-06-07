@@ -50,7 +50,7 @@ cool
         const input = document.getElementById('googlesearch');
         const query = encodeURIComponent(input.value.trim());
         if (query) {
-            const proxiedURL = `/API/index.js?url=https://www.google.com/search?q=${query}`;
+            const proxiedURL = `/API/ndex.js?url=https://www.google.com/search?q=${query}`;
             window.location.href = proxiedURL;
         }
     });
@@ -60,7 +60,7 @@ cool
         const rawUrl = input.value.trim();
         if (rawUrl) {
             const encodedUrl = encodeURIComponent(rawUrl);
-            const finalUrl = `/API/index.js?url=${encodedUrl}`;
+            const finalUrl = `/API/ndex.js?url=${encodedUrl}`;
             window.location.href = finalUrl;
         }
     });
