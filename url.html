@@ -1,67 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CamoAPI</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CamoAPI</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js" defer></script>
+  <script src="text-replacer.js" defer></script> <!-- Optional: only if you're using the replacer -->
 </head>
 <body>
-    <div class="content">
-        <div class="typewriter">
-            <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
-            <h1>
-cool
-                
-                <span id="typingtext">
-                </span>
-            </h1>
-            <script>
-                var typed = new Typed('#typingtext', {
-                strings: [`"it's cool"`, '"sigma"'],
-                typeSpeed: 100,
-                backSpeed: 100,
-                backDelay: 100,
-                loop: true,
-                loopCount: Infinity,
-                startDelay: 500,
-                backDelay: 2500,
-                cursorChar: '|',
-                });
-            </script>
-        </div>
-        <div class="search">
-
-            <div class="images box">
-                <h1>Try Now</h1>
-                <p>Search a URL</p>
-                <form id="customURLForm">
-                    <input type="text" id="urlsearch" placeholder="Enter a full URL" required />
-                </form>                
-            </div>
-
-        </div>
+  <div class="content">
+    <div class="typewriter">
+      <h1>
+        cool <span id="typingtext"></span>
+      </h1>
     </div>
-</body>
-</html>
-<script>
-    document.getElementById('customGoogleForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const input = document.getElementById('googlesearch');
-        const query = encodeURIComponent(input.value.trim());
-        if (query) {
-            const proxiedURL = `/API/ndex.js?url=https://www.google.com/search?q=${query}`;
-            window.location.href = proxiedURL;
-        }
-    });
-    document.getElementById('customURLForm').addEventListener('submit', function(e) {
+
+    <div class="search">
+      <div class="images box">
+        <h1>Try Now</h1>
+        <p>Search a URL</p>
+        <form id="customURLForm">
+          <input type="text" id="urlsearch" placeholder="Enter a full URL" required />
+          <button type="submit">Go</button>
+        </form>                
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Typed.js Init
+    document.addEventListener("DOMContentLoaded", () => {
+      new Typed('#typingtext', {
+        strings: [`"it's cool"`, '"sigma"'],
+        typeSpeed: 100,
+        backSpeed: 100,
+        backDelay: 100,
+        loop: true,
+        loopCount: Infinity,
+        startDelay: 500,
+        backDelay: 2500,
+        cursorChar: '|',
+      });
+
+      // URL Form Handler
+      document.getElementById('customURLForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const input = document.getElementById('urlsearch');
         const rawUrl = input.value.trim();
-        if (rawUrl) {
-            const encodedUrl = encodeURIComponent(rawUrl);
-            const finalUrl = `/API/ndex.js?url=${encodedUrl}`;
-            window.location.href = finalUrl;
+
+        // Ensure it's a valid-looking URL
+        if (rawUrl.length > 0) {
+          const encodedUrl = encodeURIComponent(rawUrl);
+          const finalUrl = `/API/ndex.js?url=${encodedUrl}`;
+          window.location.href = finalUrl;
+        } else {
+          alert("Please enter a valid URL.");
         }
+      });
     });
-</script>
+  </script>
+</body>
+</html>
